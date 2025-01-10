@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#1A1A1A"/>
+  <rect x="100" y="100" width="200" height="100" stroke="#C8102E" stroke-width="4" fill="none"/>
+  <path d="M100 130 L300 130" stroke="#C8102E" stroke-width="2"/>
+  <circle cx="115" cy="115" r="4" fill="#C8102E"/>
+  <circle cx="135" cy="115" r="4" fill="#C8102E"/>
+  <circle cx="155" cy="115" r="4" fill="#C8102E"/>
+  <text x="200" y="170" text-anchor="middle" fill="#C8102E" font-family="monospace" font-size="16">&lt;/&gt;</text>
+  <text x="200" y="250" text-anchor="middle" fill="#FFFFFF" font-family="Arial" font-size="24">Implementation</text>
+</svg> 

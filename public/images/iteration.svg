@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#1A1A1A"/>
+  <path d="M150 150 A50 50 0 1 1 250 150 L270 130 M250 150 L270 170" stroke="#C8102E" stroke-width="4" fill="none"/>
+  <path d="M250 150 A50 50 0 1 1 150 150 L130 170 M150 150 L130 130" stroke="#C8102E" stroke-width="4" fill="none"/>
+  <text x="200" y="250" text-anchor="middle" fill="#FFFFFF" font-family="Arial" font-size="24">Iteration</text>
+</svg> 

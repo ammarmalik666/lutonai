@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+ 
+    --primary: 351 85% 42%;
+    --primary-foreground: 0 0% 100%;
+ 
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+ 
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 40%;
+ 
+    --accent: 0 0% 90%;
+    --accent-foreground: 0 0% 0%;
+ 
+    --destructive: 351 85% 42%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 351 85% 42%;
+ 
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+ 
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+ 
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+ 
+    --primary: 351 85% 42%;
+    --primary-foreground: 0 0% 100%;
+ 
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
+ 
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 60%;
+ 
+    --accent: 0 0% 20%;
+    --accent-foreground: 0 0% 100%;
+ 
+    --destructive: 351 85% 42%;
+    --destructive-foreground: 0 0% 100%;
+ 
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 351 85% 42%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.tremor-Card-root {
+  @apply bg-white shadow-md dark:bg-gray-800 dark:shadow-none;
+}
+
+.tremor-Title-root {
+  @apply text-brand-800 dark:text-gray-200;
+}
+
+.tremor-TextInput-root {
+  @apply border-gray-200 focus:border-brand-200 focus:ring-brand-200 dark:border-gray-600 dark:focus:border-brand-200 dark:focus:ring-brand-200;
+}
+
+.tremor-Button-root {
+  @apply bg-brand-200 text-white hover:bg-brand-300 dark:bg-brand-200 dark:hover:bg-brand-300;
+}
+
+.tremor-Button-root[data-variant="secondary"] {
+  @apply bg-gray-200 text-gray-800 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-400;
+}
+
+.tremor-Textarea-root {
+  @apply border-gray-200 focus:border-brand-200 focus:ring-brand-200 dark:border-gray-600 dark:focus:border-brand-200 dark:focus:ring-brand-200;
+}

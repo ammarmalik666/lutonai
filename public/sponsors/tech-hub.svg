@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="200" fill="#1A1A1A"/>
+  <text x="200" y="90" text-anchor="middle" fill="#C8102E" font-family="Arial" font-size="24" font-weight="bold">Tech Hub</text>
+  <text x="200" y="130" text-anchor="middle" fill="#C8102E" font-family="Arial" font-size="24" font-weight="bold">Luton</text>
+  <circle cx="200" cy="100" r="60" stroke="#C8102E" stroke-width="4" fill="none"/>
+  <path d="M170 100 L230 100" stroke="#C8102E" stroke-width="4"/>
+  <path d="M200 70 L200 130" stroke="#C8102E" stroke-width="4"/>
+</svg> 

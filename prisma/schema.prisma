@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum EventType {
+  IN_PERSON
+  ONLINE
+  HYBRID
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  WAITLISTED
+}
+
+enum OpportunityType {
+  JOB
+  INTERNSHIP
+  PROJECT
+  MENTORSHIP
+  RESEARCH
+  VOLUNTEER
+  LEARNING
+}
+
+enum OpportunityCategory {
+  AI_DEVELOPMENT
+  DATA_SCIENCE
+  BUSINESS
+  DESIGN
+  RESEARCH
+  EDUCATION
+  COMMUNITY
+}
+
+enum OpportunityLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+enum CommitmentType {
+  FULL_TIME
+  PART_TIME
+  FLEXIBLE
+  ONE_TIME
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  hashedPassword String
+  role          UserRole  @default(USER)
+  posts         Post[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Event {
+  id                  String      @id @default(cuid())
+  title               String
+  description         String
+  date                DateTime
+  endDate             DateTime?
+  location            String
+  image               String?
+  capacity            Int?
+  type                EventType
+  venue               String?
+  address             String?
+  city                String?
+  country             String?
+  organizer           String?
+  contactEmail        String?
+  contactPhone        String?
+  registrationDeadline DateTime?
+  price               Float?
+  category            String?
+  tags                String?
+  status              EventStatus @default(DRAFT)
+  isPublic            Boolean     @default(true)
+  registrations       EventRegistration[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+}
+
+model EventRegistration {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String
+  phone               String?
+  organization        String?
+  dietaryRequirements String?
+  specialRequirements String?
+  status              RegistrationStatus @default(PENDING)
+  event               Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId             String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([eventId, email])
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  category    String?
+  tags        String?   // Stored as comma-separated values
+  images      String?   // Stored as comma-separated URLs
+  videoUrl    String?
+  published   Boolean   @default(false)
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Sponsor {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  website     String?
+  logo        String?   // URL to logo image
+  tier        String    // PLATINUM, GOLD, SILVER, BRONZE
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+  contactName String?
+  contactEmail String?
+  contactPhone String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Opportunity {
+    id          String      @id @default(cuid())
+    title       String
+    description String
+    type        OpportunityType
+    category    OpportunityCategory
+    level       OpportunityLevel
+    commitment  CommitmentType
+    location    String?     // Can be physical location or "Remote"
+    remote      Boolean     @default(true)
+    company     String?
+    companyLogo String?
+    url         String?     // External link to more details or application
+    skills      String?     // Comma-separated list of required skills
+    compensation String?    // Could be salary range, stipend, or "Volunteer"
+    startDate   DateTime?
+    endDate     DateTime?
+    deadline    DateTime?
+    isActive    Boolean     @default(true)
+    featured    Boolean     @default(false)
+    
+    // Contact Information
+    contactName  String?
+    contactEmail String?
+    contactPhone String?
+
+    // Metadata
+    views       Int         @default(0)
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime    @updatedAt
+}
+
+model Contact {
+    id          String    @id @default(cuid())
+    firstName   String
+    lastName    String
+    email       String
+    subject     String
+    message     String
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+}

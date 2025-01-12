@@ -1,106 +1,136 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { prisma } from "@/lib/prisma"
-import { authOptions } from "@/lib/auth"
-import { createSuccessResponse, createErrorResponse, handleApiError } from "@/lib/api-utils"
-
-interface RouteParams {
-    params: { id: string }
-}
+import { writeFile, unlink } from "fs/promises"
+import path from "path"
+import dbConnect from "@/lib/mongodb"
+import Post from "@/models/Post"
 
 export async function GET(
-    request: Request,
-    { params }: RouteParams
+    req: Request,
+    { params }: { params: { id: string } }
 ) {
     try {
-        const post = await prisma.post.findUnique({
-            where: { id: params.id },
-            include: {
-                author: {
-                    select: {
-                        name: true,
-                    },
-                },
-            },
-        })
-
+        await dbConnect()
+        
+        const post = await Post.findById(params.id)
+        
         if (!post) {
-            return createErrorResponse("Post not found", "NOT_FOUND", 404)
+            return NextResponse.json(
+                { error: "Post not found" },
+                { status: 404 }
+            )
         }
 
-        // Convert comma-separated strings to arrays
-        const formattedPost = {
-            ...post,
-            tags: post.tags ? post.tags.split(",") : [],
-            images: post.images ? post.images.split(",") : [],
-        }
-
-        return createSuccessResponse(formattedPost)
+        return NextResponse.json({ data: post })
     } catch (error) {
-        return handleApiError(error)
+        console.error("Error fetching post:", error)
+        return NextResponse.json(
+            { error: "Error fetching post" },
+            { status: 500 }
+        )
     }
-}
-
-interface UpdatePostInput {
-    title: string
-    content: string
-    category?: string
-    tags?: string[]
-    images?: string[]
-    videoUrl?: string
-    published?: boolean
 }
 
 export async function PUT(
-    request: Request,
-    { params }: RouteParams
+    req: Request,
+    { params }: { params: { id: string } }
 ) {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user) {
-        return createErrorResponse("Authentication required", "UNAUTHORIZED", 401)
-    }
-
     try {
-        const json = await request.json()
-        const { title, content, category, tags, images, videoUrl, published } = json as UpdatePostInput
+        await dbConnect()
+        
+        const formData = await req.formData()
+        const post = await Post.findById(params.id)
+        
+        if (!post) {
+            return NextResponse.json(
+                { error: "Post not found" },
+                { status: 404 }
+            )
+        }
 
-        const post = await prisma.post.update({
-            where: { id: params.id },
-            data: {
-                title,
-                content,
-                category,
-                tags: Array.isArray(tags) ? tags.join(",") : tags,
-                images: Array.isArray(images) ? images.join(",") : images,
-                videoUrl,
-                published,
+        // Handle new thumbnail if provided
+        const file = formData.get("thumbnail") as File
+        let thumbnailPath = post.thumbnail // Keep existing thumbnail by default
+
+        if (file) {
+            // Delete old thumbnail
+            if (post.thumbnail) {
+                const oldPath = path.join(process.cwd(), "public", post.thumbnail)
+                try {
+                    await unlink(oldPath)
+                } catch (error) {
+                    console.error("Error deleting old thumbnail:", error)
+                }
+            }
+
+            // Save new thumbnail
+            const bytes = await file.arrayBuffer()
+            const buffer = Buffer.from(bytes)
+            const filename = `${Date.now()}-${file.name}`
+            const filepath = path.join(process.cwd(), "public/uploads", filename)
+            await writeFile(filepath, buffer)
+            thumbnailPath = `/uploads/${filename}`
+        }
+
+        // Update post
+        const updatedPost = await Post.findByIdAndUpdate(
+            params.id,
+            {
+                title: formData.get("title"),
+                content: formData.get("content"),
+                category: formData.get("category"),
+                tags: JSON.parse(formData.get("tags") as string),
+                thumbnail: thumbnailPath,
             },
-        })
+            { new: true }
+        )
 
-        return createSuccessResponse(post)
+        return NextResponse.json(updatedPost)
     } catch (error) {
-        return handleApiError(error)
+        console.error("Error updating post:", error)
+        return NextResponse.json(
+            { error: "Error updating post" },
+            { status: 500 }
+        )
     }
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: RouteParams
+    req: Request,
+    { params }: { params: { id: string } }
 ) {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user) {
-        return createErrorResponse("Authentication required", "UNAUTHORIZED", 401)
-    }
-
     try {
-        await prisma.post.delete({
-            where: { id: params.id },
-        })
+        await dbConnect()
+        
+        const post = await Post.findById(params.id)
+        if (!post) {
+            return NextResponse.json(
+                { error: "Post not found" },
+                { status: 404 }
+            )
+        }
 
-        return new NextResponse(null, { status: 204 })
+        // Delete thumbnail file
+        if (post.thumbnail) {
+            const filepath = path.join(process.cwd(), "public", post.thumbnail)
+            try {
+                await unlink(filepath)
+            } catch (error) {
+                console.error("Error deleting thumbnail:", error)
+            }
+        }
+
+        // Delete post from database
+        await Post.findByIdAndDelete(params.id)
+
+        return NextResponse.json(
+            { message: "Post deleted successfully" },
+            { status: 200 }
+        )
     } catch (error) {
-        return handleApiError(error)
+        console.error("Error deleting post:", error)
+        return NextResponse.json(
+            { error: "Error deleting post" },
+            { status: 500 }
+        )
     }
 } 

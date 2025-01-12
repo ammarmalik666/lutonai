@@ -1,50 +1,54 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { Card, Title, Text, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Button, Badge } from "@tremor/react"
-import { fadeIn, staggerContainer, slideIn } from "@/lib/animations"
+import { Title, Grid, TextInput } from "@tremor/react"
+import Image from "next/image"
+import { 
+    MagnifyingGlassIcon,
+    PencilSquareIcon,
+    TrashIcon 
+} from "@heroicons/react/24/outline"
 import { toast } from "sonner"
-import { format } from "date-fns"
+import DeleteModal from "@/components/DeleteModal"
 
 interface Post {
-    id: string
+    _id: string
     title: string
-    content: string
-    category: string | null
-    tags: string | null
-    image: string | null
-    videoUrl: string | null
-    author: {
-        name: string | null
-    }
-    published: boolean
+    category: string
+    thumbnail: string
     createdAt: string
-    updatedAt: string
 }
 
-export default function PostsPage() {
+export default function Posts() {
+    const { data: session, status } = useSession()
     const router = useRouter()
     const [posts, setPosts] = useState<Post[]>([])
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [searchQuery, setSearchQuery] = useState("")
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        postId: "",
+        postTitle: ""
+    })
 
     const fetchPosts = async () => {
         try {
             setIsLoading(true)
-            setError(null)
-            const response = await fetch("/api/posts")
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error?.message || "Failed to fetch posts")
-            }
+            const response = await fetch(
+                `/api/posts?page=${currentPage}&search=${searchQuery}&limit=12`
+            )
+            if (!response.ok) throw new Error("Failed to fetch posts")
+            
             const data = await response.json()
-            setPosts(data.data.posts || [])
+            setPosts(data.posts)
+            setTotalPages(data.totalPages)
         } catch (error) {
-            console.error("Error fetching posts:", error)
-            setError(error instanceof Error ? error.message : "Failed to load posts")
-            toast.error(error instanceof Error ? error.message : "Failed to load posts")
+            toast.error("Error loading posts")
+            console.error(error)
         } finally {
             setIsLoading(false)
         }
@@ -52,193 +56,157 @@ export default function PostsPage() {
 
     useEffect(() => {
         fetchPosts()
-    }, [])
+    }, [currentPage, searchQuery])
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this post?")) return
+    const handleDeleteClick = (postId: string, postTitle: string) => {
+        setDeleteModal({
+            isOpen: true,
+            postId,
+            postTitle
+        })
+    }
 
+    const handleDeleteConfirm = async () => {
         try {
-            const response = await fetch(`/api/posts/${id}`, {
+            const response = await fetch(`/api/posts/${deleteModal.postId}`, {
                 method: "DELETE",
             })
 
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error?.message || "Failed to delete post")
-            }
+            if (!response.ok) throw new Error("Failed to delete post")
 
             toast.success("Post deleted successfully")
-            fetchPosts()
+            fetchPosts() // Refresh the posts list
         } catch (error) {
-            console.error("Error deleting post:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to delete post")
+            toast.error("Error deleting post")
+            console.error(error)
+        } finally {
+            setDeleteModal({ isOpen: false, postId: "", postTitle: "" })
         }
     }
 
+    if (status === "loading" || isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="text-white">Loading...</div>
+            </div>
+        )
+    }
+
     return (
-        <motion.div
-            className="min-h-screen"
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-        >
-            <motion.div variants={fadeIn} className="relative mb-8">
-                <div className="max-w-4xl">
-                    <Title className="text-5xl font-bold text-white mb-4">Posts</Title>
-                    <Text className="text-xl text-gray-400">
-                        Create and manage blog posts, share updates with your community.
-                    </Text>
+        <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col space-y-4 mb-8">
+                <Title className="text-3xl font-bold text-white">Posts</Title>
+                
+                <div className="flex items-center gap-4">
+                    <div className="flex-1 relative">
+                        <style jsx global>{`
+                            .tremor-TextInput-root input {
+                                background-color: #000000 !important;
+                                border-color: #222222 !important;
+                            }
+                            .tremor-TextInput-root input:focus {
+                                border-color: #222222 !important;
+                                ring-color: #222222 !important;
+                                box-shadow: none !important;
+                            }
+                        `}</style>
+                        <TextInput
+                            placeholder="Search posts..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value)
+                                setCurrentPage(1)
+                            }}
+                            className="bg-[#000000] border-[#222222] text-white placeholder-gray-400"
+                            icon={MagnifyingGlassIcon}
+                        />
+                    </div>
+                    <button 
+                        onClick={() => router.push('/admin/posts/create')}
+                        className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                        Create New Post
+                    </button>
                 </div>
-            </motion.div>
-
-            <motion.div variants={fadeIn} className="mb-8">
-                <Button
-                    onClick={() => router.push("/admin/posts/new")}
-                    size="lg"
-                    className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                >
-                    Create Post
-                </Button>
-            </motion.div>
-
-            {isLoading ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-lg text-gray-400">Loading posts...</div>
-                </motion.div>
-            ) : error ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-center">
-                        <div className="text-lg text-red-500 mb-4">{error}</div>
-                        <Button
-                            onClick={fetchPosts}
-                            className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                        >
-                            Try Again
-                        </Button>
-                    </div>
-                </motion.div>
-            ) : posts.length === 0 ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-center">
-                        <div className="text-lg text-gray-400 mb-4">No posts found</div>
-                        <Button
-                            onClick={() => router.push("/admin/posts/new")}
-                            className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                        >
-                            Create Your First Post
-                        </Button>
-                    </div>
-                </motion.div>
+            </div>
+            
+            {posts.length === 0 ? (
+                <div className="text-center text-gray-400 py-12">
+                    No posts found
+                </div>
             ) : (
-                <motion.div variants={slideIn}>
-                    <Card className="relative overflow-hidden rounded-xl border border-gray-800 bg-gradient-to-br from-gray-900 to-black backdrop-blur-lg">
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeaderCell className="text-gray-400">Post Details</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Author</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Category</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Status</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Created</TableHeaderCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {posts.map((post) => (
-                                    <TableRow
-                                        key={post.id}
-                                        className="group hover:bg-gray-800/50 transition-colors"
+                <Grid numItemsLg={3} numItemsMd={2} numItemsSm={1} className="gap-6">
+                    {posts.map((post) => (
+                        <div 
+                            key={post._id}
+                            className="group bg-[#000000] rounded-lg overflow-hidden transition-all duration-200 relative"
+                        >
+                            <div className="relative h-48 w-full">
+                                <Image
+                                    src={post.thumbnail}
+                                    alt={post.title}
+                                    fill
+                                    className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
+                                    <button 
+                                        onClick={() => router.push(`/admin/posts/edit/${post._id}`)}
+                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                                     >
-                                        <TableCell>
-                                            <div className="flex justify-between items-start gap-4">
-                                                <div className="space-y-1">
-                                                    <Text className="font-medium text-white">
-                                                        {post.title}
-                                                    </Text>
-                                                    <Text className="text-sm text-gray-400 line-clamp-2">
-                                                        {post.content}
-                                                    </Text>
-                                                    {post.tags && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {post.tags.split(',').map((tag, index) => (
-                                                                <Badge
-                                                                    key={index}
-                                                                    size="sm"
-                                                                    color="blue"
-                                                                >
-                                                                    {tag}
-                                                                </Badge>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            size="xs"
-                                                            variant="secondary"
-                                                            className="opacity-0 group-hover:opacity-100 transition-all hover:bg-[#C8102E] hover:text-white"
-                                                            onClick={() => router.push(`/admin/posts/${post.id}`)}
-                                                        >
-                                                            Edit
-                                                        </Button>
-                                                        <Button
-                                                            size="xs"
-                                                            variant="secondary"
-                                                            className="opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 hover:text-white"
-                                                            onClick={() => handleDelete(post.id)}
-                                                        >
-                                                            Delete
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                                {post.image && (
-                                                    <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-                                                        <img
-                                                            src={post.image}
-                                                            alt={post.title}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Text className="text-gray-400">
-                                                {post.author?.name || 'Unknown'}
-                                            </Text>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge size="sm" color="cyan">
-                                                {post.category || 'Uncategorized'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                size="sm"
-                                                color={post.published ? "green" : "gray"}
-                                            >
-                                                {post.published ? "Published" : "Draft"}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Text className="text-gray-400">
-                                                {format(new Date(post.createdAt), "PPP")}
-                                            </Text>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </motion.div>
+                                        <PencilSquareIcon className="h-5 w-5 text-white" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteClick(post._id, post.title)}
+                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                    >
+                                        <TrashIcon className="h-5 w-5 text-red-500" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="p-4">
+                                <span className="inline-block px-3 py-1 text-xs font-semibold text-red-500 border border-red-500 rounded-full mb-2">
+                                    {post.category}
+                                </span>
+                                <h3 
+                                    onClick={() => router.push(`/admin/posts/view/${post._id}`)}
+                                    className="text-white text-lg font-semibold cursor-pointer hover:text-red-500 transition-colors truncate"
+                                    title={post.title}
+                                >
+                                    {post.title.length > 40 
+                                        ? post.title.substring(0, 40) + "..."
+                                        : post.title
+                                    }
+                                </h3>
+                            </div>
+                        </div>
+                    ))}
+                </Grid>
             )}
-        </motion.div>
+
+            {totalPages > 1 && (
+                <div className="flex justify-center mt-8 space-x-2">
+                    {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                            key={i + 1}
+                            onClick={() => setCurrentPage(i + 1)}
+                            className={`px-4 py-2 rounded-lg transition-colors ${
+                                currentPage === i + 1
+                                    ? "bg-red-500 text-white"
+                                    : "bg-[#000000] text-gray-400 border border-red-500 hover:text-white"
+                            }`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            <DeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, postId: "", postTitle: "" })}
+                onConfirm={handleDeleteConfirm}
+                title={deleteModal.postTitle}
+            />
+        </div>
     )
 } 

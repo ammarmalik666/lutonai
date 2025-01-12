@@ -1,293 +1,246 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Card, Title, Text, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Button, Badge } from "@tremor/react"
-import { motion } from "framer-motion"
-import { fadeIn, staggerContainer, slideIn } from "@/lib/animations"
-import { toast } from "sonner"
-import { IconBriefcase, IconMapPin, IconCalendarDue, IconTag } from "@tabler/icons-react"
+import { Title } from "@tremor/react"
 import Image from "next/image"
+import { 
+    MagnifyingGlassIcon,
+    PencilSquareIcon,
+    TrashIcon,
+    PlusCircleIcon,
+    MapPinIcon,
+    CalendarIcon,
+    BriefcaseIcon
+} from "@heroicons/react/24/outline"
+import { toast } from "sonner"
+import DeleteModal from "@/components/DeleteModal"
 
 interface Opportunity {
-    id: string
+    _id: string
     title: string
-    category: string
-    description: string
+    companyLogo: string
     type: string
-    level: string
-    commitment: string
+    category: string
     location: string
-    remote: boolean
-    company: string | null
-    companyLogo: string | null
-    url: string | null
-    skills: string | null
-    compensation: string | null
-    startDate: string | null
-    endDate: string | null
-    deadline: string | null
-    isActive: boolean
-    featured: boolean
-    contactName: string | null
-    contactEmail: string | null
-    contactPhone: string | null
-    views: number
-    createdAt: string
-    updatedAt: string
+    commitment: string
+    applicationDeadline?: string
+    remoteAvailable: boolean
 }
 
-export default function OpportunitiesPage() {
+export default function Opportunities() {
     const router = useRouter()
     const [opportunities, setOpportunities] = useState<Opportunity[]>([])
+    const [searchQuery, setSearchQuery] = useState("")
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        opportunityId: "",
+        opportunityTitle: ""
+    })
 
-    const fetchOpportunities = async () => {
+    const fetchOpportunities = useCallback(async (query: string) => {
         try {
             setIsLoading(true)
-            setError(null)
-            const response = await fetch("/api/opportunities")
-            if (!response.ok) {
-                throw new Error("Failed to fetch opportunities")
-            }
+            const response = await fetch(`/api/opportunities?search=${query}`)
+            if (!response.ok) throw new Error("Failed to fetch opportunities")
             const data = await response.json()
-            setOpportunities(data.opportunities || [])
+            setOpportunities(data.opportunities)
         } catch (error) {
-            console.error("Error fetching opportunities:", error)
-            setError(error instanceof Error ? error.message : "Failed to load opportunities")
-            toast.error(error instanceof Error ? error.message : "Failed to load opportunities")
+            toast.error("Error loading opportunities")
+            console.error(error)
         } finally {
             setIsLoading(false)
         }
-    }
-
-    useEffect(() => {
-        fetchOpportunities()
     }, [])
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this opportunity?")) return
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchOpportunities(searchQuery)
+        }, 300)
 
+        return () => clearTimeout(timeoutId)
+    }, [searchQuery, fetchOpportunities])
+
+    const handleDeleteClick = (opportunityId: string, opportunityTitle: string) => {
+        setDeleteModal({
+            isOpen: true,
+            opportunityId,
+            opportunityTitle
+        })
+    }
+
+    const handleDeleteConfirm = async () => {
         try {
-            const response = await fetch(`/api/opportunities/${id}`, {
+            const response = await fetch(`/api/opportunities/${deleteModal.opportunityId}`, {
                 method: "DELETE",
             })
 
-            if (!response.ok) {
-                throw new Error("Failed to delete opportunity")
-            }
+            if (!response.ok) throw new Error("Failed to delete opportunity")
 
             toast.success("Opportunity deleted successfully")
-            fetchOpportunities()
+            fetchOpportunities(searchQuery)
         } catch (error) {
-            console.error("Error deleting opportunity:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to delete opportunity")
+            toast.error("Error deleting opportunity")
+            console.error(error)
+        } finally {
+            setDeleteModal({ isOpen: false, opportunityId: "", opportunityTitle: "" })
         }
-    }
-
-    const getOpportunityStatus = (opportunity: Opportunity) => {
-        if (!opportunity.isActive) {
-            return { label: "Inactive", color: "red" }
-        }
-        if (opportunity.featured) {
-            return { label: "Featured", color: "yellow" }
-        }
-        return { label: "Active", color: "green" }
     }
 
     const getTypeColor = (type: string) => {
-        switch (type.toUpperCase()) {
-            case "JOB":
-                return "blue"
-            case "INTERNSHIP":
-                return "green"
-            case "PROJECT":
-                return "purple"
-            case "MENTORSHIP":
-                return "orange"
-            case "RESEARCH":
-                return "indigo"
-            case "VOLUNTEER":
-                return "pink"
-            case "LEARNING":
-                return "cyan"
-            default:
-                return "gray"
+        const colors = {
+            Job: "bg-blue-100 text-blue-800",
+            Internship: "bg-green-100 text-green-800",
+            Project: "bg-purple-100 text-purple-800",
+            Mentorship: "bg-yellow-100 text-yellow-800",
+            Research: "bg-pink-100 text-pink-800",
+            Volunteer: "bg-orange-100 text-orange-800",
+            Learning: "bg-indigo-100 text-indigo-800"
         }
+        return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800"
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="text-white">Loading...</div>
+            </div>
+        )
     }
 
     return (
-        <motion.div
-            className="min-h-screen"
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-        >
-            <motion.div variants={fadeIn} className="relative mb-8">
-                <div className="max-w-4xl">
-                    <Title className="text-5xl font-bold text-white mb-4">Opportunities</Title>
-                    <Text className="text-xl text-gray-400">
-                        Create and manage opportunities for the AI community.
-                    </Text>
+        <div className="max-w-[1600px] mx-auto px-4 py-8">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <Title className="text-2xl md:text-3xl font-bold text-white">Opportunities</Title>
+                
+                <div className="flex flex-col md:flex-row gap-4 md:items-center">
+                    {/* Search Bar */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search opportunities..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full md:w-[300px] bg-[#111111] border border-[#222222] text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-red-500"
+                            autoComplete="off"
+                        />
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    </div>
+
+                    {/* Add New Button */}
+                    <button 
+                        onClick={() => router.push('/admin/opportunities/create')}
+                        className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <PlusCircleIcon className="h-5 w-5" />
+                        <span>Add New Opportunity</span>
+                    </button>
                 </div>
-            </motion.div>
+            </div>
 
-            <motion.div variants={fadeIn} className="mb-8">
-                <Button
-                    onClick={() => router.push("/admin/opportunities/new")}
-                    size="lg"
-                    className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                    icon={IconBriefcase}
-                >
-                    Create Opportunity
-                </Button>
-            </motion.div>
-
-            {isLoading ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-lg text-gray-400">Loading opportunities...</div>
-                </motion.div>
-            ) : error ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-center">
-                        <div className="text-lg text-red-500 mb-4">{error}</div>
-                        <Button
-                            onClick={fetchOpportunities}
-                            className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                        >
-                            Try Again
-                        </Button>
-                    </div>
-                </motion.div>
-            ) : opportunities.length === 0 ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-center">
-                        <div className="text-lg text-gray-400 mb-4">No opportunities found</div>
-                        <Button
-                            onClick={() => router.push("/admin/opportunities/new")}
-                            className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                        >
-                            Create Your First Opportunity
-                        </Button>
-                    </div>
-                </motion.div>
+            {/* Opportunities Grid */}
+            {opportunities.length === 0 ? (
+                <div className="text-center text-gray-400 py-12">
+                    <div className="mb-4">No opportunities found</div>
+                    <button
+                        onClick={() => router.push('/admin/opportunities/create')}
+                        className="text-red-500 hover:text-red-400 transition-colors"
+                    >
+                        Add your first opportunity
+                    </button>
+                </div>
             ) : (
-                <motion.div variants={slideIn}>
-                    <Card className="relative overflow-hidden rounded-xl border border-gray-800 bg-gradient-to-br from-gray-900 to-black backdrop-blur-lg">
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeaderCell className="text-gray-400">Opportunity Details</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Type & Category</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Location</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Status</TableHeaderCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {opportunities.map((opportunity) => {
-                                    const status = getOpportunityStatus(opportunity)
-                                    return (
-                                        <TableRow
-                                            key={opportunity.id}
-                                            className="group hover:bg-gray-800/50 transition-colors"
-                                        >
-                                            <TableCell>
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <div className="space-y-1">
-                                                        <Text className="font-medium text-white">
-                                                            {opportunity.title}
-                                                        </Text>
-                                                        <Text className="text-sm text-gray-400 line-clamp-2">
-                                                            {opportunity.description}
-                                                        </Text>
-                                                        <div className="flex items-center gap-2">
-                                                            {opportunity.company && (
-                                                                <Badge size="xs" color="cyan">
-                                                                    {opportunity.company}
-                                                                </Badge>
-                                                            )}
-                                                            <div className="flex items-center gap-2">
-                                                                <Button
-                                                                    size="xs"
-                                                                    variant="secondary"
-                                                                    className="opacity-0 group-hover:opacity-100 transition-all hover:bg-[#C8102E] hover:text-white"
-                                                                    onClick={() => router.push(`/admin/opportunities/${opportunity.id}`)}
-                                                                >
-                                                                    Edit
-                                                                </Button>
-                                                                <Button
-                                                                    size="xs"
-                                                                    variant="secondary"
-                                                                    className="opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 hover:text-white"
-                                                                    onClick={() => handleDelete(opportunity.id)}
-                                                                >
-                                                                    Delete
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {opportunity.companyLogo && (
-                                                        <div className="relative h-12 w-12 flex-shrink-0">
-                                                            <Image
-                                                                src={opportunity.companyLogo}
-                                                                alt={opportunity.company || ""}
-                                                                fill
-                                                                className="rounded-lg object-cover"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-1">
-                                                    <Badge size="xs" color={getTypeColor(opportunity.type)}>
-                                                        {opportunity.type}
-                                                    </Badge>
-                                                    <div className="flex items-center gap-1 text-sm text-gray-400">
-                                                        <IconTag className="h-4 w-4" />
-                                                        <span>{opportunity.category}</span>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-1 text-sm text-gray-400">
-                                                        <IconMapPin className="h-4 w-4" />
-                                                        <span>{opportunity.location}</span>
-                                                    </div>
-                                                    {opportunity.deadline && (
-                                                        <div className="flex items-center gap-1 text-sm text-gray-400">
-                                                            <IconCalendarDue className="h-4 w-4" />
-                                                            <span>
-                                                                Deadline: {new Date(opportunity.deadline).toLocaleDateString()}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge size="sm" color={status.color}>
-                                                    {status.label}
-                                                </Badge>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </motion.div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {opportunities.map((opportunity) => (
+                        <div 
+                            key={opportunity._id}
+                            className="group bg-[#111111] rounded-xl overflow-hidden"
+                        >
+                            {/* Company Logo */}
+                            <div 
+                                className="relative h-48 bg-[#0A0A0A]"
+                                onClick={() => router.push(`/admin/opportunities/view/${opportunity._id}`)}
+                            >
+                                <Image
+                                    src={opportunity.companyLogo}
+                                    alt={opportunity.title}
+                                    fill
+                                    className="cursor-pointer"
+                                />
+                                {/* Hover Actions */}
+                                <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            router.push(`/admin/opportunities/edit/${opportunity._id}`);
+                                        }}
+                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                        title="Edit"
+                                    >
+                                        <PencilSquareIcon className="h-5 w-5 text-white" />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteClick(opportunity._id, opportunity.title);
+                                        }}
+                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                        title="Delete"
+                                    >
+                                        <TrashIcon className="h-5 w-5 text-red-500" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${getTypeColor(opportunity.type)}`}>
+                                        {opportunity.type}
+                                    </span>
+                                    {opportunity.remoteAvailable && (
+                                        <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            Remote
+                                        </span>
+                                    )}
+                                </div>
+                                <h3 
+                                    onClick={() => router.push(`/admin/opportunities/view/${opportunity._id}`)}
+                                    className="text-white font-semibold cursor-pointer hover:text-red-500 transition-colors truncate mb-2"
+                                    title={opportunity.title}
+                                >
+                                    {opportunity.title}
+                                </h3>
+                                <div className="space-y-1 text-sm text-gray-400">
+                                    <div className="flex items-center gap-2">
+                                        <MapPinIcon className="h-4 w-4" />
+                                        <span className="truncate">{opportunity.location}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <BriefcaseIcon className="h-4 w-4" />
+                                        <span>{opportunity.commitment}</span>
+                                    </div>
+                                    {opportunity.applicationDeadline && (
+                                        <div className="flex items-center gap-2">
+                                            <CalendarIcon className="h-4 w-4" />
+                                            <span>Deadline: {new Date(opportunity.applicationDeadline).toLocaleDateString()}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             )}
-        </motion.div>
+
+            <DeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, opportunityId: "", opportunityTitle: "" })}
+                onConfirm={handleDeleteConfirm}
+                title={deleteModal.opportunityTitle}
+            />
+        </div>
     )
 } 

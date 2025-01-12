@@ -2,322 +2,269 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { Card, Title, TextInput, Textarea, Button } from "@tremor/react"
+import Image from "next/image"
+import { format } from "date-fns"
 import { toast } from "sonner"
-import { IconPhoto, IconX } from "@tabler/icons-react"
-import { fadeIn, staggerContainer } from "@/lib/animations"
 
-interface PostFormData {
+interface Post {
+    _id: string
     title: string
     content: string
     category: string
     tags: string[]
-    images: string[]
-    videoUrl?: string
-    published: boolean
+    thumbnail: string
+    createdAt: string
 }
 
-const defaultFormData: PostFormData = {
-    title: "",
-    content: "",
-    category: "",
-    tags: [],
-    images: [],
-    videoUrl: "",
-    published: false,
-}
-
-const categories = [
-    "Technology",
-    "Events",
-    "Community",
-    "Education",
-    "Research",
-    "Innovation",
-    "Other",
-]
-
-async function getPost(id: string) {
-    const res = await fetch(`/api/posts/${id}`)
-    if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error?.message || "Failed to fetch post")
-    }
-    const data = await res.json()
-    return data.data
-}
-
-async function savePost(data: PostFormData, id?: string) {
-    const res = await fetch(`/api/posts${id ? `/${id}` : ""}`, {
-        method: id ? "PUT" : "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    })
-    if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error?.message || "Failed to save post")
-    }
-    const responseData = await res.json()
-    return responseData.data
-}
-
-export default function PostEditor({ params }: { params: { id: string } }) {
+export default function PostDetail({ params }: { params: { id: string } }) {
     const router = useRouter()
-    const [formData, setFormData] = useState<PostFormData>(defaultFormData)
-    const [isLoading, setIsLoading] = useState(false)
-    const [previewImage, setPreviewImage] = useState<string | null>(null)
-    const isEditing = params.id !== "new"
+    const [post, setPost] = useState<Post | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        if (isEditing) {
-            getPost(params.id)
-                .then((data) => {
-                    setFormData(data)
-                })
-                .catch((error) => {
-                    console.error("Error fetching post:", error)
-                    toast.error("Failed to fetch post")
-                })
+        const fetchPost = async () => {
+            try {
+                const response = await fetch(`/api/posts/${params.id}`)
+                if (!response.ok) throw new Error("Failed to fetch post")
+                const data = await response.json()
+                setPost(data)
+            } catch (error) {
+                toast.error("Error loading post")
+                console.error(error)
+            } finally {
+                setIsLoading(false)
+            }
         }
-    }, [isEditing, params.id])
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        fetchPost()
+    }, [params.id])
 
-        try {
-            await savePost(formData, isEditing ? params.id : undefined)
-            toast.success(isEditing ? "Post updated successfully" : "Post created successfully")
-            router.push("/admin/posts")
-        } catch (error) {
-            console.error("Error saving post:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to save post")
-            setIsLoading(false)
-        }
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="text-white">Loading...</div>
+            </div>
+        )
     }
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-    ) => {
-        const { name, value } = e.target
-        setFormData((prev) => ({ ...prev, [name]: value }))
-    }
-
-    const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const tags = e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean)
-        setFormData((prev) => ({ ...prev, tags }))
-    }
-
-    const handleImageAdd = () => {
-        if (previewImage && !formData.images.includes(previewImage)) {
-            setFormData((prev) => ({
-                ...prev,
-                images: [...prev.images, previewImage],
-            }))
-            setPreviewImage(null)
-        }
-    }
-
-    const handleImageRemove = (index: number) => {
-        setFormData((prev) => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index),
-        }))
+    if (!post) {
+        return (
+            <div className="text-center text-white py-12">
+                Post not found
+            </div>
+        )
     }
 
     return (
-        <motion.div
-            className="min-h-screen bg-[#0B0F17] p-8"
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-        >
-            <div className="max-w-4xl mx-auto">
-                <h1 className="text-4xl font-bold text-white mb-2">
-                    {isEditing ? "Edit Post" : "Create New Post"}
-                </h1>
-                <p className="text-gray-400 mb-8">
-                    {isEditing
-                        ? "Update your blog post content and settings."
-                        : "Create a new blog post to share with your community."}
-                </p>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+            {/* Back Button */}
+            <button
+                onClick={() => router.back()}
+                className="text-gray-400 hover:text-white mb-8 flex items-center gap-2 transition-colors"
+            >
+                <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                    />
+                </svg>
+                Back to Posts
+            </button>
 
-                <Card className="bg-gradient-to-r from-[#0B0F17] to-[#0B0F17] border-r-2 border-r-red-500/20 shadow-lg">
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                        {/* Basic Information Section */}
-                        <div className="space-y-6">
-                            <h2 className="text-xl font-semibold text-white border-b border-gray-800 pb-2">Basic Information</h2>
+            {/* Main Content */}
+            <article className="bg-[#000000] rounded-lg overflow-hidden border border-[#222222]">
+                {/* Thumbnail */}
+                <div className="relative h-[400px] w-full">
+                    <Image
+                        src={post.thumbnail}
+                        alt={post.title}
+                        fill
+                        className="object-cover"
+                        priority
+                    />
+                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-white mb-1">
-                                    Title *
-                                </label>
-                                <TextInput
-                                    name="title"
-                                    placeholder="Enter a compelling title"
-                                    value={formData.title}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-white text-gray-900 placeholder-gray-500 rounded-md"
-                                />
-                            </div>
+                {/* Post Info */}
+                <div className="p-8">
+                    {/* Meta Information */}
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-4">
+                        <time dateTime={post.createdAt}>
+                            {format(new Date(post.createdAt), "MMMM d, yyyy")}
+                        </time>
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                        <span className="text-red-500 font-medium">
+                            {post.category}
+                        </span>
+                    </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-white mb-1">
-                                    Content *
-                                </label>
-                                <Textarea
-                                    name="content"
-                                    placeholder="Write your post content here..."
-                                    value={formData.content}
-                                    onChange={handleChange}
-                                    required
-                                    rows={12}
-                                    className="w-full bg-white text-gray-900 placeholder-gray-500 rounded-md"
-                                />
-                            </div>
+                    {/* Title */}
+                    <h1 className="text-3xl font-bold text-white mb-6">
+                        {post.title}
+                    </h1>
 
-                            <div>
-                                <label className="block text-sm font-medium text-white mb-1">
-                                    Category *
-                                </label>
-                                <select
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-white text-gray-900 rounded-md px-3 py-2 border border-gray-300"
+                    {/* Tags */}
+                    {post.tags && post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            {post.tags.map((tag, index) => (
+                                <span
+                                    key={index}
+                                    className="bg-red-500/10 text-red-500 px-3 py-1 rounded-full text-sm"
                                 >
-                                    <option value="">Select a category</option>
-                                    {categories.map((category) => (
-                                        <option key={category} value={category}>
-                                            {category}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                    {tag}
+                                </span>
+                            ))}
                         </div>
+                    )}
 
-                        {/* Additional Details Section */}
-                        <div className="space-y-6">
-                            <h2 className="text-xl font-semibold text-white border-b border-gray-800 pb-2">Additional Details</h2>
+                    {/* Content */}
+                    <div 
+                        className="prose prose-invert max-w-none text-white"
+                        dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
 
-                            <div>
-                                <label className="block text-sm font-medium text-white mb-1">
-                                    Tags
-                                </label>
-                                <TextInput
-                                    name="tags"
-                                    placeholder="Enter tags separated by commas"
-                                    value={formData.tags.join(", ")}
-                                    onChange={handleTagsChange}
-                                    className="w-full bg-white text-gray-900 placeholder-gray-500 rounded-md"
-                                />
-                                <p className="mt-1 text-sm text-gray-400">
-                                    Separate tags with commas (e.g., "technology, ai, machine learning")
-                                </p>
-                            </div>
+                    <style jsx global>{`
+                        .prose {
+                            color: white;
+                        }
+                        .prose h1 {
+                            color: white !important;
+                            font-size: 2.25rem !important;
+                            font-weight: 700 !important;
+                            margin-top: 2rem !important;
+                            margin-bottom: 1.5rem !important;
+                            line-height: 1.2 !important;
+                        }
+                        .prose h2 {
+                            color: white !important;
+                            font-size: 1.875rem !important;
+                            font-weight: 600 !important;
+                            margin-top: 1.75rem !important;
+                            margin-bottom: 1.25rem !important;
+                            line-height: 1.3 !important;
+                        }
+                        .prose h3 {
+                            color: white !important;
+                            font-size: 1.5rem !important;
+                            font-weight: 600 !important;
+                            margin-top: 1.5rem !important;
+                            margin-bottom: 1rem !important;
+                            line-height: 1.4 !important;
+                        }
+                        .prose h4 {
+                            color: white !important;
+                            font-size: 1.25rem !important;
+                            font-weight: 600 !important;
+                            margin-top: 1.25rem !important;
+                            margin-bottom: 0.75rem !important;
+                            line-height: 1.5 !important;
+                        }
+                        .prose p, .prose ul, .prose ol, .prose li {
+                            color: white !important;
+                            font-size: 1.125rem !important;
+                            line-height: 1.75 !important;
+                            margin-bottom: 1rem !important;
+                        }
+                        .prose strong {
+                            color: white !important;
+                            font-weight: 600 !important;
+                        }
+                        .prose em {
+                            color: white !important;
+                        }
+                        .prose blockquote {
+                            color: #e5e7eb !important;
+                            border-left: 4px solid #ef4444 !important;
+                            font-style: italic !important;
+                            margin: 1.5rem 0 !important;
+                            padding-left: 1.25rem !important;
+                        }
+                        .prose a {
+                            color: #ef4444 !important;
+                            text-decoration: underline !important;
+                            font-weight: 500 !important;
+                        }
+                        .prose a:hover {
+                            color: #dc2626 !important;
+                        }
+                        .prose code {
+                            color: white !important;
+                            background: #222222 !important;
+                            padding: 0.2em 0.4em !important;
+                            border-radius: 0.25rem !important;
+                            font-size: 0.875em !important;
+                        }
+                        .prose pre {
+                            background: #222222 !important;
+                            padding: 1.25rem !important;
+                            border-radius: 0.5rem !important;
+                            overflow-x: auto !important;
+                        }
+                        .prose pre code {
+                            color: white !important;
+                            background: transparent !important;
+                            padding: 0 !important;
+                        }
+                        .prose ul, .prose ol {
+                            padding-left: 1.5rem !important;
+                        }
+                        .prose ul li {
+                            list-style-type: disc !important;
+                        }
+                        .prose ol li {
+                            list-style-type: decimal !important;
+                        }
+                        .prose hr {
+                            border-color: #374151 !important;
+                            margin: 2rem 0 !important;
+                        }
+                        .prose img {
+                            border-radius: 0.5rem !important;
+                            margin: 1.5rem 0 !important;
+                        }
+                        .prose table {
+                            width: 100% !important;
+                            border-collapse: collapse !important;
+                            margin: 1.5rem 0 !important;
+                        }
+                        .prose th, .prose td {
+                            color: white !important;
+                            padding: 0.75rem !important;
+                            border: 1px solid #374151 !important;
+                        }
+                        .prose th {
+                            background: #222222 !important;
+                            font-weight: 600 !important;
+                        }
+                    `}</style>
+                </div>
+            </article>
 
-                            {/* Images Section */}
-                            <div className="space-y-4">
-                                <label className="block text-sm font-medium text-white mb-1">
-                                    Images
-                                </label>
-                                <div className="flex gap-4 items-end">
-                                    <div className="flex-1">
-                                        <TextInput
-                                            placeholder="Enter image URL"
-                                            value={previewImage || ""}
-                                            onChange={(e) => setPreviewImage(e.target.value)}
-                                            className="w-full bg-white text-gray-900 placeholder-gray-500 rounded-md"
-                                        />
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        onClick={handleImageAdd}
-                                        disabled={!previewImage}
-                                        className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300"
-                                    >
-                                        Add Image
-                                    </Button>
-                                </div>
-
-                                {/* Image Previews */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                                    {formData.images.map((url, index) => (
-                                        <div
-                                            key={index}
-                                            className="relative group rounded-lg overflow-hidden border border-gray-700 bg-gray-800 transition-transform hover:scale-105"
-                                        >
-                                            <img
-                                                src={url}
-                                                alt={`Preview ${index + 1}`}
-                                                className="w-full h-32 object-cover"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => handleImageRemove(index)}
-                                                className="absolute top-2 right-2 p-1 rounded-full bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                            >
-                                                <IconX size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-white mb-1">
-                                    Video URL (Optional)
-                                </label>
-                                <TextInput
-                                    name="videoUrl"
-                                    placeholder="Enter video URL (YouTube, Vimeo, etc.)"
-                                    value={formData.videoUrl || ""}
-                                    onChange={handleChange}
-                                    className="w-full bg-white text-gray-900 placeholder-gray-500 rounded-md"
-                                />
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    name="published"
-                                    checked={formData.published}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            published: e.target.checked,
-                                        }))
-                                    }
-                                    className="rounded border-gray-300 text-blue-500"
-                                />
-                                <label className="text-sm font-medium text-white">
-                                    Publish immediately
-                                </label>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end space-x-4 pt-6">
-                            <Button
-                                type="submit"
-                                disabled={isLoading}
-                                className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300"
-                            >
-                                {isLoading
-                                    ? "Saving..."
-                                    : isEditing
-                                        ? "Update Post"
-                                        : "Create Post"}
-                            </Button>
-                        </div>
-                    </form>
-                </Card>
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4 mt-8">
+                <button
+                    onClick={() => router.push(`/admin/posts/edit/${post._id}`)}
+                    className="px-4 py-2 bg-[#000000] text-white border border-[#222222] rounded-lg hover:border-red-500 transition-colors"
+                >
+                    Edit Post
+                </button>
+                <button
+                    onClick={() => {
+                        if (confirm("Are you sure you want to delete this post?")) {
+                            // Add delete functionality
+                        }
+                    }}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                    Delete Post
+                </button>
             </div>
-        </motion.div>
+        </div>
     )
 } 

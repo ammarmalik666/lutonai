@@ -8,17 +8,15 @@ import { Button } from "@/components/ui/button"
 import { fadeIn, staggerContainer, slideIn } from "@/lib/animations"
 
 interface Post {
-    id: string
+    _id: string
     title: string
     content: string
     images: string | null
+    thumbnail: string | null
     videoUrl?: string | null
-    author: {
-        name: string | null
-    }
+    author: string | null
     category: string | null
     tags: string | null
-    published: boolean
     createdAt: string
     updatedAt: string
 }
@@ -32,6 +30,13 @@ const categories = [
     "NLP",
     "Ethics in AI",
 ]
+
+// Helper function to strip HTML tags
+const stripHtmlTags = (html: string) => {
+    const tmp = document.createElement('div')
+    tmp.innerHTML = html
+    return tmp.textContent || tmp.innerText || ''
+}
 
 export default function CommunityPage() {
     const [selectedCategory, setSelectedCategory] = useState("All")
@@ -78,7 +83,7 @@ export default function CommunityPage() {
     }
 
     const filteredPosts = posts.filter(post =>
-        post.published && (selectedCategory === "All" || post.category === selectedCategory)
+        selectedCategory === "All" || post.category === selectedCategory
     )
 
     return (
@@ -138,17 +143,17 @@ export default function CommunityPage() {
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                             {filteredPosts.map((post) => (
                                 <motion.article
-                                    key={post.id}
+                                    key={post._id}
                                     className="group relative flex flex-col overflow-hidden rounded-lg border bg-card"
                                     initial="hidden"
                                     whileInView="visible"
                                     viewport={{ once: true }}
                                     variants={slideIn}
                                 >
-                                    {/* Post Images */}
+                                    {/* Post Thumbnail */}
                                     <div className="relative aspect-video overflow-hidden">
                                         <Image
-                                            src={post.images?.split(',')[0] || '/posts/default.svg'}
+                                            src={post.thumbnail || post.images?.split(',')[0] || '/posts/default.svg'}
                                             alt={post.title}
                                             className="object-cover transition-transform duration-300 group-hover:scale-105"
                                             fill
@@ -173,19 +178,19 @@ export default function CommunityPage() {
                                         </div>
                                         <div className="group relative mt-3">
                                             <h3 className="text-xl font-semibold text-[#C8102E]">
-                                                <Link href={`/community/post/${post.id}`}>
+                                                <Link href={`/community/post/${post._id}`}>
                                                     <span className="absolute inset-0" />
                                                     {post.title}
                                                 </Link>
                                             </h3>
                                             <p className="mt-5 line-clamp-3 text-sm leading-6 text-[#000000]/60">
-                                                {post.content}
+                                                {stripHtmlTags(post.content)}
                                             </p>
                                         </div>
                                         <div className="mt-6 flex items-center gap-x-4">
                                             <div className="text-sm leading-6">
                                                 <p className="font-semibold text-[#000000]">
-                                                    {post.author.name || 'Anonymous'}
+                                                    {post.author || 'Anonymous'}
                                                 </p>
                                             </div>
                                         </div>

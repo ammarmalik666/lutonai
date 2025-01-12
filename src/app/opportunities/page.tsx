@@ -2,20 +2,23 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { fadeIn, staggerContainer, slideIn } from "@/lib/animations"
 import { ApplicationForm } from "@/components/application-form"
 
 interface Opportunity {
-  id: string
+  _id: string
   title: string
-  type: string
   description: string
+  companyName: string
+  companyLogo: string | null
   location: string
-  company: string
-  deadline: string | null
-  image: string | null
+  type: string
+  salary?: string
+  deadline: string
+  createdAt: string
 }
 
 export default function OpportunitiesPage() {
@@ -120,15 +123,15 @@ export default function OpportunitiesPage() {
           >
             {opportunities.map((opportunity, index) => (
               <motion.div
-                key={opportunity.id}
+                key={opportunity._id}
                 className="group rounded-lg border border-[#C8102E]/10 bg-white p-8 shadow-sm transition-shadow hover:shadow-md"
                 variants={slideIn}
                 custom={index}
               >
                 <div className="relative h-48 w-full overflow-hidden rounded-lg">
                   <Image
-                    src={opportunity.image || "/opportunities/default.svg"}
-                    alt={opportunity.title}
+                    src={opportunity.companyLogo || "/opportunities/default.svg"}
+                    alt={opportunity.companyName}
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                     fill
                   />
@@ -144,13 +147,13 @@ export default function OpportunitiesPage() {
                     {opportunity.description}
                   </p>
                   <div className="mt-4 space-y-2 text-sm text-[#000000]/60">
-                    <p>🏢 {opportunity.company}</p>
+                    <p>🏢 {opportunity.companyName}</p>
                     <p>📍 {opportunity.location}</p>
                     {opportunity.deadline && (
                       <p>⏰ Deadline: {new Date(opportunity.deadline).toLocaleDateString()}</p>
                     )}
                   </div>
-                  <ApplicationForm opportunityId={opportunity.id} />
+                  <ApplicationForm opportunityId={opportunity._id} />
                 </div>
               </motion.div>
             ))}

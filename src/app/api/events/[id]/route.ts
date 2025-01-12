@@ -1,97 +1,144 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { prisma } from "@/lib/prisma"
-import { authOptions } from "@/lib/auth"
-import { getEventAvailability } from "@/lib/event-utils"
-import { createSuccessResponse, createErrorResponse } from "@/lib/api-utils"
+import { writeFile, unlink } from "fs/promises"
+import path from "path"
+import dbConnect from "@/lib/mongodb"
+import Event from "@/models/Event"
 
 export async function GET(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        const event = await prisma.event.findUnique({
-            where: { id: params.id },
-            include: {
-                registrations: true,
-            },
-        })
-
+        await dbConnect()
+        const event = await Event.findById(params.id)
+        
         if (!event) {
-            return createErrorResponse("Event not found", "NOT_FOUND", 404)
+            return NextResponse.json(
+                { error: "Event not found" },
+                { status: 404 }
+            )
         }
 
-        const availability = await getEventAvailability(event.id)
-
-        return createSuccessResponse({
-            ...event,
-            availability,
-        })
+        return NextResponse.json(event)
     } catch (error) {
-        console.error("Error fetching event:", error)
-        return createErrorResponse(
-            "Error fetching event",
-            "INTERNAL_SERVER_ERROR",
-            500
+        return NextResponse.json(
+            { error: "Error fetching event" },
+            { status: 500 }
         )
     }
 }
 
 export async function PUT(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user) {
-        return new NextResponse("Unauthorized", { status: 401 })
-    }
-
     try {
-        const json = await request.json()
-        const { title, description, date, location, image } = json
+        await dbConnect()
+        
+        const formData = await req.formData()
+        const event = await Event.findById(params.id)
+        
+        if (!event) {
+            return NextResponse.json(
+                { error: "Event not found" },
+                { status: 404 }
+            )
+        }
 
-        const event = await prisma.event.update({
-            where: { id: params.id },
-            data: {
-                title,
-                description,
-                date: new Date(date),
-                location,
-                image,
+        // Handle new thumbnail if provided
+        const file = formData.get("thumbnail") as File
+        let thumbnailPath = event.thumbnail // Keep existing thumbnail by default
+
+        if (file) {
+            // Delete old thumbnail
+            if (event.thumbnail) {
+                const oldPath = path.join(process.cwd(), "public", event.thumbnail)
+                try {
+                    await unlink(oldPath)
+                } catch (error) {
+                    console.error("Error deleting old thumbnail:", error)
+                }
+            }
+
+            // Save new thumbnail
+            const bytes = await file.arrayBuffer()
+            const buffer = Buffer.from(bytes)
+            const filename = `${Date.now()}-${file.name}`
+            const filepath = path.join(process.cwd(), "public/uploads", filename)
+            await writeFile(filepath, buffer)
+            thumbnailPath = `/uploads/${filename}`
+        }
+
+        // Update event
+        const updatedEvent = await Event.findByIdAndUpdate(
+            params.id,
+            {
+                title: formData.get("title"),
+                description: formData.get("description"),
+                startDateTime: new Date(formData.get("startDateTime") as string),
+                endDateTime: new Date(formData.get("endDateTime") as string),
+                eventType: formData.get("eventType"),
+                venue: formData.get("venue"),
+                address: formData.get("address"),
+                city: formData.get("city"),
+                country: formData.get("country"),
+                organizers: formData.get("organizers"),
+                contactEmail: formData.get("contactEmail"),
+                contactPhone: formData.get("contactPhone"),
+                capacity: parseInt(formData.get("capacity") as string),
+                price: parseFloat(formData.get("price") as string),
+                registrationDeadline: new Date(formData.get("registrationDeadline") as string),
+                thumbnail: thumbnailPath,
             },
-        })
+            { new: true }
+        )
 
-        return NextResponse.json(event)
+        return NextResponse.json(updatedEvent)
     } catch (error) {
         console.error("Error updating event:", error)
         return NextResponse.json(
-            { message: "Error updating event" },
+            { error: "Error updating event" },
             { status: 500 }
         )
     }
 }
 
 export async function DELETE(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user) {
-        return new NextResponse("Unauthorized", { status: 401 })
-    }
-
     try {
-        await prisma.event.delete({
-            where: { id: params.id },
-        })
+        await dbConnect()
+        
+        const event = await Event.findById(params.id)
+        if (!event) {
+            return NextResponse.json(
+                { error: "Event not found" },
+                { status: 404 }
+            )
+        }
 
-        return new NextResponse(null, { status: 204 })
+        // Delete thumbnail file
+        if (event.thumbnail) {
+            const filepath = path.join(process.cwd(), "public", event.thumbnail)
+            try {
+                await unlink(filepath)
+            } catch (error) {
+                console.error("Error deleting thumbnail:", error)
+            }
+        }
+
+        // Delete event from database
+        await Event.findByIdAndDelete(params.id)
+
+        return NextResponse.json(
+            { message: "Event deleted successfully" },
+            { status: 200 }
+        )
     } catch (error) {
         console.error("Error deleting event:", error)
         return NextResponse.json(
-            { message: "Error deleting event" },
+            { error: "Error deleting event" },
             { status: 500 }
         )
     }

@@ -9,54 +9,27 @@ import { formatDate } from "@/lib/utils"
 import { fadeIn, staggerContainer, slideIn } from "@/lib/animations"
 
 interface Event {
-  id: string
+  _id: string
   title: string
   description: string
   date: string
-  endDate: string | null
+  endDate?: string
   location: string
-  image: string | null
-  capacity: number | null
-  type: string
-  venue: string | null
-  address: string | null
-  city: string | null
-  country: string | null
-  organizer: string | null
-  contactEmail: string | null
-  contactPhone: string | null
-  registrationDeadline: string | null
-  price: number | null
-  category: string | null
-  tags: string | null
-  status: string
-  isPublic: boolean
-}
-
-interface ApiResponse {
-  data: {
-    events: Event[]
-    pagination: {
-      total: number
-      pages: number
-      currentPage: number
-      perPage: number
-      hasMore: boolean
-    }
-  }
-}
-
-const getCategoryColor = (type: string) => {
-  switch (type) {
-    case "IN_PERSON":
-      return "bg-green-500/20 text-green-300"
-    case "ONLINE":
-      return "bg-blue-500/20 text-blue-300"
-    case "HYBRID":
-      return "bg-purple-500/20 text-purple-300"
-    default:
-      return "bg-[#C8102E]/10 text-[#C8102E]"
-  }
+  image?: string
+  capacity?: number
+  type: 'IN_PERSON' | 'ONLINE' | 'HYBRID'
+  venue?: string
+  address?: string
+  city?: string
+  country?: string
+  organizer?: string
+  contactEmail?: string
+  contactPhone?: string
+  registrationDeadline?: string
+  price?: number
+  category?: string
+  tags?: string[]
+  status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED'
 }
 
 export default function EventsPage() {
@@ -71,7 +44,7 @@ export default function EventsPage() {
       setIsLoading(true)
       setError("")
 
-      const response = await fetch(`/api/events?page=${pageNum}&limit=10&upcoming=true&status=PUBLISHED`, {
+      const response = await fetch(`/api/events?page=${pageNum}&limit=10&status=PUBLISHED`, {
         headers: {
           'Accept': 'application/json',
         },
@@ -81,14 +54,14 @@ export default function EventsPage() {
         throw new Error(`Failed to fetch events (HTTP ${response.status})`)
       }
 
-      const result: ApiResponse = await response.json()
-
-      if (!result?.data?.events) {
+      const data = await response.json()
+      
+      if (!data?.events) {
         throw new Error("Invalid response format from server")
       }
 
-      setEvents(pageNum === 1 ? result.data.events : [...events, ...result.data.events])
-      setHasMore(result.data.pagination.hasMore)
+      setEvents(pageNum === 1 ? data.events : [...events, ...data.events])
+      setHasMore(data.hasMore)
       setPage(pageNum)
     } catch (error) {
       console.error("Error fetching events:", error)
@@ -115,11 +88,7 @@ export default function EventsPage() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="text-lg text-red-500 mb-4">{error}</div>
-          <Button
-            onClick={() => {
-              fetchEvents()
-            }}
-          >
+          <Button onClick={() => fetchEvents()}>
             Try Again
           </Button>
         </div>
@@ -180,7 +149,7 @@ export default function EventsPage() {
           >
             {events.map((event, index) => (
               <motion.article
-                key={event.id}
+                key={event._id}
                 className="group flex flex-col items-start"
                 variants={slideIn}
                 custom={index}
@@ -201,14 +170,18 @@ export default function EventsPage() {
                       {formatDate(event.date)}
                     </time>
                     {event.type && (
-                      <span className={`relative z-10 rounded-full px-3 py-1.5 font-medium ${getCategoryColor(event.type)}`}>
-                        {event.type.replace("_", " ")}
+                      <span className={`relative z-10 rounded-full px-3 py-1.5 font-medium ${
+                        event.type === 'IN_PERSON' ? 'bg-green-500/20 text-green-700' :
+                        event.type === 'ONLINE' ? 'bg-blue-500/20 text-blue-700' :
+                        'bg-purple-500/20 text-purple-700'
+                      }`}>
+                        {event.type.replace('_', ' ')}
                       </span>
                     )}
                   </div>
                   <div className="group relative">
                     <h3 className="mt-3 text-lg font-semibold leading-6 text-[#C8102E]">
-                      <Link href={`/events/${event.id}`}>
+                      <Link href={`/events/${event._id}`}>
                         <span className="absolute inset-0" />
                         {event.title}
                       </Link>
@@ -227,7 +200,7 @@ export default function EventsPage() {
                           👥 {event.capacity} spots
                         </span>
                       )}
-                      {event.price !== null && (
+                      {event.price !== undefined && (
                         <span className="text-sm text-[#000000]/60">
                           💰 {event.price === 0 ? "Free" : `$${event.price}`}
                         </span>
@@ -249,45 +222,6 @@ export default function EventsPage() {
               </Button>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="relative overflow-hidden bg-[#C8102E] py-20 text-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#C8102E] to-[#BD0029] mix-blend-overlay opacity-50" />
-        <div className="container relative">
-          <motion.div
-            className="mx-auto max-w-2xl text-center"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.h2
-              className="mb-6 text-3xl font-bold tracking-tight sm:text-4xl"
-              variants={fadeIn}
-            >
-              Subscribe to Our Newsletter
-            </motion.h2>
-            <motion.p
-              className="mb-10 text-lg leading-8 text-white/80"
-              variants={fadeIn}
-            >
-              Stay updated with our latest events and opportunities.
-            </motion.p>
-            <motion.div
-              variants={fadeIn}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                asChild
-                className="bg-white text-[#C8102E] hover:bg-gray-100"
-              >
-                <Link href="/newsletter">Subscribe Now</Link>
-              </Button>
-            </motion.div>
-          </motion.div>
         </div>
       </section>
     </>

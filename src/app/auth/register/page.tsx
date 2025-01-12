@@ -3,17 +3,63 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Card, Title, Text, TextInput, Button } from "@tremor/react"
+import { toast } from "sonner"
 
 export default function Register() {
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+    const [errors, setErrors] = useState({
+        name: '',
+        email: '',
+        password: ''
+    })
     const router = useRouter()
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const validateForm = (name: string, email: string, password: string) => {
+        const newErrors = {
+            name: '',
+            email: '',
+            password: ''
+        }
+        let isValid = true
+
+        // Name validation
+        if (name.length < 2 || name.length > 50) {
+            newErrors.name = 'Name must be between 2 and 50 characters'
+            isValid = false
+        }
+
+        // Email validation
+        const emailRegex = /^\S+@\S+\.\S+$/
+        if (!emailRegex.test(email)) {
+            newErrors.email = 'Please provide a valid email address'
+            isValid = false
+        }
+
+        // Password validation
+        if (password.length < 6) {
+            newErrors.password = 'Password must be at least 6 characters long'
+            isValid = false
+        }
+
+        setErrors(newErrors)
+        return isValid
+    }
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setError("")
+        setIsLoading(true)
+
+        const formData = new FormData(e.currentTarget)
+        const name = formData.get("name") as string
+        const email = formData.get("email") as string
+        const password = formData.get("password") as string
+
+        // Client-side validation
+        if (!validateForm(name, email, password)) {
+            setIsLoading(false)
+            return
+        }
 
         try {
             const res = await fetch("/api/auth/register", {
@@ -21,11 +67,7 @@ export default function Register() {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    name,
-                    email,
-                    password,
-                }),
+                body: JSON.stringify({ name, email, password }),
             })
 
             const data = await res.json()
@@ -34,96 +76,80 @@ export default function Register() {
                 throw new Error(data.error || "Something went wrong")
             }
 
-            router.push("/auth/signin")
+            toast.success("Registration successful! Please sign in.")
+            // Add a small delay before redirecting to ensure the toast message is visible
+            setTimeout(() => {
+                router.push("/auth/signin")
+            }, 1500)
         } catch (error) {
-            setError(error instanceof Error ? error.message : "An error occurred")
+            toast.error(error instanceof Error ? error.message : "An error occurred")
+        } finally {
+            setIsLoading(false)
         }
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Create your account
-                    </h2>
-                </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="rounded-md shadow-sm -space-y-px">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-8">
+            <div className="max-w-md mx-auto">
+                <Card className="bg-gradient-to-br from-gray-900 to-black border border-gray-800">
+                    <Title className="text-3xl font-bold text-white mb-2">Create Admin Account</Title>
+                    <Text className="text-gray-400 mb-6">
+                        Enter your details to register as an admin.
+                    </Text>
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label htmlFor="name" className="sr-only">
-                                Name
-                            </label>
-                            <input
-                                id="name"
+                            <TextInput
                                 name="name"
                                 type="text"
+                                placeholder="Enter your full name"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Full name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
                             />
+                            {errors.name && (
+                                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                            )}
                         </div>
                         <div>
-                            <label htmlFor="email" className="sr-only">
-                                Email address
-                            </label>
-                            <input
-                                id="email"
+                            <TextInput
                                 name="email"
                                 type="email"
-                                autoComplete="email"
+                                placeholder="Enter your email"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Email address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
                             />
+                            {errors.email && (
+                                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                            )}
                         </div>
                         <div>
-                            <label htmlFor="password" className="sr-only">
-                                Password
-                            </label>
-                            <input
-                                id="password"
+                            <TextInput
                                 name="password"
                                 type="password"
-                                autoComplete="new-password"
+                                placeholder="Enter your password"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
                             />
+                            {errors.password && (
+                                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                            )}
                         </div>
-                    </div>
-
-                    {error && (
-                        <div className="text-red-500 text-sm text-center">
-                            {error}
-                        </div>
-                    )}
-
-                    <div>
-                        <button
+                        <Button
                             type="submit"
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            className="w-full bg-brand-600 text-white hover:bg-brand-700"
+                            loading={isLoading}
                         >
-                            Register
-                        </button>
-                    </div>
-                </form>
+                            {isLoading ? "Creating admin account..." : "Register as Admin"}
+                        </Button>
+                    </form>
 
-                <div className="text-sm text-center">
-                    Already have an account?{" "}
-                    <Link
-                        href="/auth/signin"
-                        className="font-medium text-indigo-600 hover:text-indigo-500"
-                    >
-                        Sign in
-                    </Link>
-                </div>
+                    <div className="mt-4 text-center text-gray-400">
+                        Already have an account?{" "}
+                        <Link
+                            href="/auth/signin"
+                            className="text-brand-600 hover:text-brand-500"
+                        >
+                            Sign in
+                        </Link>
+                    </div>
+                </Card>
             </div>
         </div>
     )

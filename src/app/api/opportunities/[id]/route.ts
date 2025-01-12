@@ -1,110 +1,148 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { writeFile, unlink } from "fs/promises"
+import path from "path"
+import dbConnect from "@/lib/mongodb"
+import Opportunity from "@/models/Opportunity"
 
 export async function GET(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        const opportunity = await prisma.opportunity.findUnique({
-            where: {
-                id: params.id,
-            },
-        })
-
+        await dbConnect()
+        const opportunity = await Opportunity.findById(params.id)
+        
         if (!opportunity) {
             return NextResponse.json(
-                { error: { message: "Opportunity not found" } },
+                { error: "Opportunity not found" },
                 { status: 404 }
             )
         }
 
-        return NextResponse.json({ opportunity }, { status: 200 })
+        return NextResponse.json(opportunity)
     } catch (error) {
-        console.error("Error fetching opportunity:", error)
         return NextResponse.json(
-            { error: { message: "Failed to fetch opportunity" } },
+            { error: "Error fetching opportunity" },
             { status: 500 }
         )
     }
 }
 
 export async function PUT(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        const json = await request.json()
-
-        // Validate required fields
-        if (!json.title || !json.description || !json.type || !json.category || !json.level || !json.commitment || !json.location || !json.company || !json.skills) {
+        await dbConnect()
+        
+        const formData = await req.formData()
+        const opportunity = await Opportunity.findById(params.id)
+        
+        if (!opportunity) {
             return NextResponse.json(
-                {
-                    error: {
-                        message: "Missing required fields",
-                    },
-                },
-                { status: 400 }
+                { error: "Opportunity not found" },
+                { status: 404 }
             )
         }
 
-        const data = {
-            title: json.title,
-            description: json.description,
-            type: json.type,
-            category: json.category,
-            level: json.level,
-            commitment: json.commitment,
-            location: json.location,
-            remote: json.remote ?? true,
-            company: json.company,
-            skills: json.skills,
-            isActive: json.isActive ?? true,
-            featured: json.featured ?? false,
-            ...(json.companyLogo && { companyLogo: json.companyLogo }),
-            ...(json.url && { url: json.url }),
-            ...(json.compensation && { compensation: json.compensation }),
-            ...(json.startDate && { startDate: new Date(json.startDate) }),
-            ...(json.endDate && { endDate: new Date(json.endDate) }),
-            ...(json.deadline && { deadline: new Date(json.deadline) }),
-            ...(json.contactName && { contactName: json.contactName }),
-            ...(json.contactEmail && { contactEmail: json.contactEmail }),
-            ...(json.contactPhone && { contactPhone: json.contactPhone }),
+        // Handle new logo if provided
+        const file = formData.get("companyLogo") as File
+        let logoPath = opportunity.companyLogo // Keep existing logo by default
+
+        if (file) {
+            // Delete old logo
+            if (opportunity.companyLogo) {
+                const oldPath = path.join(process.cwd(), "public", opportunity.companyLogo)
+                try {
+                    await unlink(oldPath)
+                } catch (error) {
+                    console.error("Error deleting old logo:", error)
+                }
+            }
+
+            // Save new logo
+            const bytes = await file.arrayBuffer()
+            const buffer = Buffer.from(bytes)
+            const filename = `${Date.now()}-${file.name}`
+            const filepath = path.join(process.cwd(), "public/uploads", filename)
+            await writeFile(filepath, buffer)
+            logoPath = `/uploads/${filename}`
         }
 
-        const opportunity = await prisma.opportunity.update({
-            where: {
-                id: params.id,
-            },
-            data,
-        })
+        // Parse skills array from JSON string
+        const skills = JSON.parse(formData.get("skills") as string)
 
-        return NextResponse.json({ opportunity }, { status: 200 })
+        // Update opportunity
+        const updatedOpportunity = await Opportunity.findByIdAndUpdate(
+            params.id,
+            {
+                title: formData.get("title"),
+                description: formData.get("description"),
+                type: formData.get("type"),
+                category: formData.get("category"),
+                level: formData.get("level"),
+                commitment: formData.get("commitment"),
+                skills,
+                location: formData.get("location"),
+                companyLogo: logoPath,
+                applicationUrl: formData.get("applicationUrl"),
+                startDate: formData.get("startDate") || undefined,
+                endDate: formData.get("endDate") || undefined,
+                applicationDeadline: formData.get("applicationDeadline") || undefined,
+                contactName: formData.get("contactName") || undefined,
+                contactEmail: formData.get("contactEmail") || undefined,
+                contactPhone: formData.get("contactPhone") || undefined,
+                remoteAvailable: formData.get("remoteAvailable") === "true",
+            },
+            { new: true }
+        )
+
+        return NextResponse.json(updatedOpportunity)
     } catch (error) {
         console.error("Error updating opportunity:", error)
         return NextResponse.json(
-            { error: { message: "Failed to update opportunity" } },
+            { error: "Error updating opportunity" },
             { status: 500 }
         )
     }
 }
 
 export async function DELETE(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        await prisma.opportunity.delete({
-            where: {
-                id: params.id,
-            },
-        })
+        await dbConnect()
+        
+        const opportunity = await Opportunity.findById(params.id)
+        if (!opportunity) {
+            return NextResponse.json(
+                { error: "Opportunity not found" },
+                { status: 404 }
+            )
+        }
 
-        return NextResponse.json({ message: "Opportunity deleted successfully" }, { status: 200 })
+        // Delete logo file
+        if (opportunity.companyLogo) {
+            const filepath = path.join(process.cwd(), "public", opportunity.companyLogo)
+            try {
+                await unlink(filepath)
+            } catch (error) {
+                console.error("Error deleting logo:", error)
+            }
+        }
+
+        // Delete opportunity from database
+        await Opportunity.findByIdAndDelete(params.id)
+
+        return NextResponse.json(
+            { message: "Opportunity deleted successfully" },
+            { status: 200 }
+        )
     } catch (error) {
         console.error("Error deleting opportunity:", error)
         return NextResponse.json(
-            { error: { message: "Failed to delete opportunity" } },
+            { error: "Error deleting opportunity" },
             { status: 500 }
         )
     }

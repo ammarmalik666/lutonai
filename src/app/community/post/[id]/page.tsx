@@ -8,19 +8,17 @@ import { fadeIn, staggerContainer } from "@/lib/animations"
 import { format } from "date-fns"
 
 interface Post {
-    id: string
+    _id: string
     title: string
     content: string
     images: string[]
     videoUrl?: string | null
-    author: {
-        name: string | null
-    }
+    author: string | null
     category: string | null
     tags: string[]
-    published: boolean
     createdAt: string
     updatedAt: string
+    thumbnail: string | null
 }
 
 export default function PostPage({ params }: { params: { id: string } }) {
@@ -121,7 +119,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
                             variants={fadeIn}
                         >
                             <div className="font-medium">
-                                {post.author.name || 'Anonymous'}
+                                {post.author || 'Anonymous'}
                             </div>
                             <div className="text-white/60">
                                 <time dateTime={post.createdAt}>
@@ -137,89 +135,44 @@ export default function PostPage({ params }: { params: { id: string } }) {
             <section className="py-16">
                 <div className="container">
                     <div className="mx-auto max-w-4xl">
-                        {/* Main Image */}
-                        {images.length > 0 && (
+                        {/* Thumbnail Image */}
+                        {post.thumbnail && (
                             <motion.div
-                                className="relative -mt-32 mb-16 aspect-[21/9] overflow-hidden rounded-xl shadow-2xl"
+                                className="mb-12 overflow-hidden rounded-xl shadow-lg"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                             >
-                                <Image
-                                    src={images[0]}
-                                    alt={post.title}
-                                    className="object-cover"
-                                    fill
-                                    sizes="(max-width: 1024px) 100vw, 1024px"
-                                    priority
-                                />
-                            </motion.div>
-                        )}
-
-                        {/* Additional Images */}
-                        {images.length > 1 && (
-                            <motion.div
-                                className="mb-16 grid gap-6 sm:grid-cols-2"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                {images.slice(1).map((image, index) => (
-                                    <div key={index} className="relative aspect-video overflow-hidden rounded-lg shadow-lg">
-                                        <Image
-                                            src={image}
-                                            alt={`${post.title} - Image ${index + 2}`}
-                                            className="object-cover transition-transform duration-300 hover:scale-105"
-                                            fill
-                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 512px"
-                                        />
-                                    </div>
-                                ))}
-                            </motion.div>
-                        )}
-
-                        {/* Video Embed */}
-                        {post.videoUrl && (
-                            <motion.div
-                                className="mb-16 overflow-hidden rounded-lg shadow-lg"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4 }}
-                            >
-                                <div className="relative aspect-video">
-                                    <iframe
-                                        src={post.videoUrl}
-                                        title={post.title}
-                                        className="absolute inset-0 h-full w-full"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
+                                <div className="relative aspect-[16/9]">
+                                    <Image
+                                        src={post.thumbnail}
+                                        alt={post.title}
+                                        className="object-cover"
+                                        fill
+                                        sizes="(max-width: 1024px) 100vw, 1024px"
+                                        priority
                                     />
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* Content */}
+                        {/* Content with TinyMCE HTML */}
                         <motion.div
-                            className="prose prose-lg mx-auto max-w-none"
+                            className="prose prose-lg mx-auto max-w-none prose-headings:text-[#C8102E] prose-a:text-[#C8102E] prose-strong:text-[#C8102E]"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6 }}
-                        >
-                            {post.content.split("\n\n").map((paragraph, index) => (
-                                <p key={index} className="mb-6 leading-relaxed text-gray-600">
-                                    {paragraph}
-                                </p>
-                            ))}
-                        </motion.div>
+                            transition={{ delay: 0.3 }}
+                            dangerouslySetInnerHTML={{ __html: post.content }}
+                        />
 
                         {/* Tags */}
-                        {tags.length > 0 && (
+                        {post.tags && post.tags.length > 0 && (
                             <motion.div
                                 className="mt-16 flex flex-wrap gap-2"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.8 }}
+                                transition={{ delay: 0.4 }}
                             >
-                                {tags.map((tag) => (
+                                {post.tags.map((tag: string) => (
                                     <span
                                         key={tag}
                                         className="rounded-full bg-[#C8102E]/5 px-4 py-2 text-sm font-medium text-[#C8102E] transition-colors hover:bg-[#C8102E]/10"

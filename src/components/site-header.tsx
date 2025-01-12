@@ -2,8 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useSession, signIn, signOut } from "next-auth/react"
-import { Button } from "@/components/ui/button"
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -16,7 +14,11 @@ const navigation = [
 
 export function SiteHeader() {
   const pathname = usePathname()
-  const { data: session } = useSession()
+
+  // Don't render header on admin pages
+  if (pathname?.startsWith("/admin")) {
+    return null
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#000000]/10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-[#C8102E]/10 dark:bg-[#000000]/95">
@@ -31,44 +33,16 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className={`text-sm font-medium transition-colors hover:text-[#C8102E] ${pathname === item.href
-                ? "text-[#C8102E]"
-                : "text-[#000000]/60 dark:text-white/60"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-[#C8102E] ${
+                pathname === item.href
+                  ? "text-[#C8102E]"
+                  : "text-[#000000]/60 dark:text-white/60"
+              }`}
             >
               {item.name}
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center space-x-4">
-          {session?.user ? (
-            <>
-              {session.user.role === "ADMIN" && (
-                <Link href="/admin">
-                  <Button variant="outline" size="sm">
-                    Admin Dashboard
-                  </Button>
-                </Link>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => signOut()}
-              >
-                Sign Out
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => signIn()}
-              className="bg-[#C8102E] hover:bg-[#BD0029] text-white"
-            >
-              Sign In
-            </Button>
-          )}
-        </div>
       </div>
     </header>
   )

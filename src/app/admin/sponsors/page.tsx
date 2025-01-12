@@ -2,262 +2,207 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import {
-    Card,
-    Title,
-    Text,
-    Table,
-    TableHead,
-    TableRow,
-    TableHeaderCell,
-    TableBody,
-    TableCell,
-    Badge,
-    Button,
-} from "@tremor/react"
+import { Title } from "@tremor/react"
+import Image from "next/image"
+import { 
+    MagnifyingGlassIcon,
+    PencilSquareIcon,
+    TrashIcon,
+    PlusCircleIcon
+} from "@heroicons/react/24/outline"
 import { toast } from "sonner"
-import { fadeIn } from "@/lib/animations"
+import DeleteModal from "@/components/DeleteModal"
 
 interface Sponsor {
-    id: string
+    _id: string
     name: string
-    description: string
-    website?: string | null
-    logo?: string | null
-    tier: string
-    startDate: string
-    endDate?: string | null
-    isActive: boolean
-    contactName?: string | null
-    contactEmail?: string | null
-    contactPhone?: string | null
-    createdAt: string
-    updatedAt: string
+    logo: string
+    sponsorshipLevel: string
 }
 
-function getTierColor(tier: string) {
-    switch (tier.toUpperCase()) {
-        case "PLATINUM":
-            return "slate"
-        case "GOLD":
-            return "yellow"
-        case "SILVER":
-            return "gray"
-        case "BRONZE":
-            return "orange"
-        default:
-            return "gray"
-    }
-}
-
-export default function SponsorsPage() {
+export default function Sponsors() {
     const router = useRouter()
     const [sponsors, setSponsors] = useState<Sponsor[]>([])
+    const [searchQuery, setSearchQuery] = useState("")
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    useEffect(() => {
-        fetchSponsors()
-    }, [])
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        sponsorId: "",
+        sponsorName: ""
+    })
 
     const fetchSponsors = async () => {
         try {
-            const response = await fetch("/api/sponsors")
+            setIsLoading(true)
+            const response = await fetch(`/api/sponsors?search=${searchQuery}`)
+            if (!response.ok) throw new Error("Failed to fetch sponsors")
             const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to fetch sponsors")
-            }
-
-            setSponsors(data.data)
-            setError(null)
+            setSponsors(data.sponsors)
         } catch (error) {
-            console.error("Error fetching sponsors:", error)
-            setError(error instanceof Error ? error.message : "Failed to fetch sponsors")
-            toast.error(error instanceof Error ? error.message : "Failed to fetch sponsors")
+            toast.error("Error loading sponsors")
+            console.error(error)
         } finally {
             setIsLoading(false)
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this sponsor?")) {
-            return
-        }
+    useEffect(() => {
+        fetchSponsors()
+    }, [searchQuery])
 
+    const handleDeleteClick = (sponsorId: string, sponsorName: string) => {
+        setDeleteModal({
+            isOpen: true,
+            sponsorId,
+            sponsorName
+        })
+    }
+
+    const handleDeleteConfirm = async () => {
         try {
-            const response = await fetch(`/api/sponsors/${id}`, {
+            const response = await fetch(`/api/sponsors/${deleteModal.sponsorId}`, {
                 method: "DELETE",
             })
 
-            if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.error?.message || "Failed to delete sponsor")
-            }
+            if (!response.ok) throw new Error("Failed to delete sponsor")
 
             toast.success("Sponsor deleted successfully")
             fetchSponsors()
         } catch (error) {
-            console.error("Error deleting sponsor:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to delete sponsor")
+            toast.error("Error deleting sponsor")
+            console.error(error)
+        } finally {
+            setDeleteModal({ isOpen: false, sponsorId: "", sponsorName: "" })
         }
+    }
+
+    const getLevelColor = (level: string) => {
+        const colors = {
+            Platinum: "bg-gray-100 text-gray-800",
+            Gold: "bg-yellow-100 text-yellow-800",
+            Silver: "bg-gray-100 text-gray-600",
+            Bronze: "bg-orange-100 text-orange-800",
+            Partner: "bg-blue-100 text-blue-800"
+        }
+        return colors[level as keyof typeof colors] || "bg-gray-100 text-gray-800"
     }
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-8">
-                <div className="max-w-6xl mx-auto">
-                    <div className="animate-pulse">
-                        <div className="h-8 w-64 bg-gray-800 rounded mb-4"></div>
-                        <div className="h-4 w-96 bg-gray-800 rounded mb-8"></div>
-                        <div className="h-[600px] bg-gray-800 rounded"></div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-8">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center">
-                        <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
-                        <p className="text-gray-400 mb-4">{error}</p>
-                        <Button onClick={fetchSponsors}>Try Again</Button>
-                    </div>
-                </div>
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="text-white">Loading...</div>
             </div>
         )
     }
 
     return (
-        <motion.div
-            className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-8"
-            initial="hidden"
-            animate="visible"
-            variants={fadeIn}
-        >
-            <div className="max-w-6xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <Title className="text-4xl font-bold text-white">Sponsors</Title>
-                        <Text className="text-xl text-gray-400">
-                            Manage your sponsors and partnerships.
-                        </Text>
+        <div className="max-w-[1600px] mx-auto px-4 py-8">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <Title className="text-2xl md:text-3xl font-bold text-white">Sponsors</Title>
+                
+                <div className="flex flex-col md:flex-row gap-4 md:items-center">
+                    {/* Search Bar */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search sponsors..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full md:w-[300px] bg-[#111111] border border-[#222222] text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-red-500"
+                        />
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     </div>
-                    <Button
-                        onClick={() => router.push("/admin/sponsors/new")}
-                        className="bg-brand-600 text-white hover:bg-brand-700"
-                    >
-                        Add Sponsor
-                    </Button>
-                </div>
 
-                <Card className="bg-gradient-to-br from-gray-900 to-black border border-gray-800">
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeaderCell>Name</TableHeaderCell>
-                                <TableHeaderCell>Tier</TableHeaderCell>
-                                <TableHeaderCell>Status</TableHeaderCell>
-                                <TableHeaderCell>Start Date</TableHeaderCell>
-                                <TableHeaderCell>End Date</TableHeaderCell>
-                                <TableHeaderCell>Actions</TableHeaderCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {sponsors.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8">
-                                        <Text className="text-gray-400">
-                                            No sponsors found. Add your first sponsor to get started.
-                                        </Text>
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                sponsors.map((sponsor) => (
-                                    <TableRow key={sponsor.id}>
-                                        <TableCell>
-                                            <div className="flex items-center space-x-3">
-                                                {sponsor.logo && (
-                                                    <img
-                                                        src={sponsor.logo}
-                                                        alt={`${sponsor.name} logo`}
-                                                        className="w-8 h-8 rounded-full object-cover"
-                                                    />
-                                                )}
-                                                <div>
-                                                    <div className="font-medium text-white">
-                                                        {sponsor.name}
-                                                    </div>
-                                                    {sponsor.website && (
-                                                        <a
-                                                            href={sponsor.website}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-sm text-gray-400 hover:text-brand-400"
-                                                        >
-                                                            {(() => {
-                                                                try {
-                                                                    return new URL(sponsor.website).hostname
-                                                                } catch {
-                                                                    return sponsor.website
-                                                                }
-                                                            })()}
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge color={getTierColor(sponsor.tier)}>
-                                                {sponsor.tier}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge color={sponsor.isActive ? "green" : "red"}>
-                                                {sponsor.isActive ? "Active" : "Inactive"}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(sponsor.startDate).toLocaleDateString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            {sponsor.endDate
-                                                ? new Date(sponsor.endDate).toLocaleDateString()
-                                                : "Ongoing"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex space-x-2">
-                                                <Button
-                                                    size="xs"
-                                                    variant="secondary"
-                                                    onClick={() =>
-                                                        router.push(`/admin/sponsors/${sponsor.id}`)
-                                                    }
-                                                    className="bg-gray-700 text-gray-100 hover:bg-gray-600"
-                                                >
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    size="xs"
-                                                    variant="secondary"
-                                                    onClick={() => handleDelete(sponsor.id)}
-                                                    className="bg-red-700 text-gray-100 hover:bg-red-600"
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </Card>
+                    {/* Add New Button */}
+                    <button 
+                        onClick={() => router.push('/admin/sponsors/create')}
+                        className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <PlusCircleIcon className="h-5 w-5" />
+                        <span>Add New Sponsor</span>
+                    </button>
+                </div>
             </div>
-        </motion.div>
+
+            {/* Sponsors Grid */}
+            {sponsors.length === 0 ? (
+                <div className="text-center text-gray-400 py-12">
+                    <div className="mb-4">No sponsors found</div>
+                    <button
+                        onClick={() => router.push('/admin/sponsors/create')}
+                        className="text-red-500 hover:text-red-400 transition-colors"
+                    >
+                        Add your first sponsor
+                    </button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {sponsors.map((sponsor) => (
+                        <div 
+                            key={sponsor._id}
+                            className="group bg-[#111111] rounded-xl overflow-hidden"
+                        >
+                            {/* Logo Container */}
+                            <div 
+                                className="relative h-48 bg-[#0A0A0A]"
+                                onClick={() => router.push(`/admin/sponsors/view/${sponsor._id}`)}
+                            >
+                                <Image
+                                    src={sponsor.logo}
+                                    alt={sponsor.name}
+                                    fill
+                                    className="cursor-pointer"
+                                />
+                                {/* Hover Actions */}
+                                <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            router.push(`/admin/sponsors/edit/${sponsor._id}`);
+                                        }}
+                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                        title="Edit"
+                                    >
+                                        <PencilSquareIcon className="h-5 w-5 text-white" />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteClick(sponsor._id, sponsor.name);
+                                        }}
+                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                        title="Delete"
+                                    >
+                                        <TrashIcon className="h-5 w-5 text-red-500" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4">
+                                <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full mb-2 ${getLevelColor(sponsor.sponsorshipLevel)}`}>
+                                    {sponsor.sponsorshipLevel}
+                                </span>
+                                <h3 
+                                    onClick={() => router.push(`/admin/sponsors/view/${sponsor._id}`)}
+                                    className="text-white font-semibold cursor-pointer hover:text-red-500 transition-colors truncate"
+                                    title={sponsor.name}
+                                >
+                                    {sponsor.name}
+                                </h3>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <DeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, sponsorId: "", sponsorName: "" })}
+                onConfirm={handleDeleteConfirm}
+                title={deleteModal.sponsorName}
+            />
+        </div>
     )
 } 

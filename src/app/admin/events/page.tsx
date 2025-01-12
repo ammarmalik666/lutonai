@@ -1,75 +1,51 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, Title, Text, Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Button, Badge } from "@tremor/react"
-import { motion } from "framer-motion"
-import { fadeIn, staggerContainer, slideIn } from "@/lib/animations"
+import Link from "next/link"
+import Image from "next/image"
+import { PlusIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { format } from "date-fns"
-import { IconCalendar, IconMapPin, IconUsers, IconClock, IconMail, IconPhone, IconCash } from "@tabler/icons-react"
+import { formatDate } from "@/lib/utils"
 
 interface Event {
-    id: string
+    _id: string
     title: string
     description: string
-    date: string
-    endDate: string | null
-    location: string
-    image: string | null
-    capacity: number | null
-    type: string
-    venue: string | null
-    address: string | null
-    city: string | null
-    country: string | null
-    organizer: string | null
-    contactEmail: string | null
-    contactPhone: string | null
-    registrationDeadline: string | null
-    price: number | null
-    category: string | null
-    tags: string | null
-    status: string
-    isPublic: boolean
+    startDateTime: string
+    endDateTime: string
+    eventType: string
+    venue?: string
+    address?: string
+    city?: string
+    country?: string
+    organizers?: string
+    contactEmail?: string
+    contactPhone?: string
+    capacity?: number
+    price?: number
+    registrationDeadline?: string
+    thumbnail?: string
+    status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED'
     createdAt: string
     updatedAt: string
 }
 
-interface EventsResponse {
-    data: {
-        events: Event[]
-        pagination: {
-            total: number
-            pages: number
-            currentPage: number
-            perPage: number
-            hasMore: boolean
-        }
-    }
-}
-
-export default function EventsPage() {
-    const router = useRouter()
+export default function AdminEventsPage() {
     const [events, setEvents] = useState<Event[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState("")
 
     const fetchEvents = async () => {
         try {
             setIsLoading(true)
-            setError(null)
-            const response = await fetch("/api/events")
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error?.message || "Failed to fetch events")
-            }
-            const data: EventsResponse = await response.json()
-            setEvents(data.data.events)
+            const response = await fetch('/api/admin/events')
+            if (!response.ok) throw new Error("Failed to fetch events")
+            const data = await response.json()
+            setEvents(data)
         } catch (error) {
-            console.error("Error fetching events:", error)
-            setError(error instanceof Error ? error.message : "Failed to load events")
-            toast.error(error instanceof Error ? error.message : "Failed to load events")
+            console.error("Error loading events:", error)
+            toast.error("Failed to load events")
         } finally {
             setIsLoading(false)
         }
@@ -79,230 +55,137 @@ export default function EventsPage() {
         fetchEvents()
     }, [])
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (eventId: string) => {
         if (!confirm("Are you sure you want to delete this event?")) return
 
         try {
-            const response = await fetch(`/api/events?id=${id}`, {
+            const response = await fetch(`/api/admin/events/${eventId}`, {
                 method: "DELETE",
             })
 
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error?.message || "Failed to delete event")
-            }
+            if (!response.ok) throw new Error("Failed to delete event")
 
             toast.success("Event deleted successfully")
             fetchEvents()
         } catch (error) {
             console.error("Error deleting event:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to delete event")
+            toast.error("Failed to delete event")
         }
     }
 
-    const getEventStatus = (event: Event) => {
-        const eventDate = new Date(event.date)
-        const now = new Date()
-
-        if (event.status === "CANCELLED") {
-            return { label: "Cancelled", color: "red" }
-        }
-        if (event.status === "DRAFT") {
-            return { label: "Draft", color: "gray" }
-        }
-        if (eventDate < now) {
-            return { label: "Past", color: "gray" }
-        }
-        if (eventDate.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000) {
-            return { label: "Upcoming", color: "yellow" }
-        }
-        return { label: "Scheduled", color: "green" }
-    }
-
-    const getEventTypeColor = (type: string) => {
-        switch (type) {
-            case "IN_PERSON":
-                return "blue"
-            case "ONLINE":
-                return "purple"
-            case "HYBRID":
-                return "indigo"
-            default:
-                return "gray"
-        }
-    }
+    const filteredEvents = events.filter(event =>
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
     return (
-        <motion.div
-            className="min-h-screen"
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-        >
-            <motion.div variants={fadeIn} className="relative mb-8">
-                <div className="max-w-4xl">
-                    <Title className="text-5xl font-bold text-white mb-4">Events</Title>
-                    <Text className="text-xl text-gray-400">
-                        Create and manage events, track registrations, and monitor event performance.
-                    </Text>
-                </div>
-            </motion.div>
-
-            <motion.div variants={fadeIn} className="mb-8">
-                <Button
-                    onClick={() => router.push("/admin/events/new")}
-                    size="lg"
-                    className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                    icon={IconCalendar}
-                >
-                    Create Event
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <h1 className="text-2xl font-bold text-white">Events</h1>
+                <Button asChild>
+                    <Link href="/admin/events/create" className="gap-2">
+                        <PlusIcon className="h-5 w-5" />
+                        Add Event
+                    </Link>
                 </Button>
-            </motion.div>
+            </div>
 
+            {/* Search */}
+            <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Search events..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg bg-[#111111] pl-10 pr-4 py-2 text-white border border-[#222222] focus:outline-none focus:border-[#333333]"
+                />
+            </div>
+
+            {/* Events Grid */}
             {isLoading ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-lg text-gray-400">Loading events...</div>
-                </motion.div>
-            ) : error ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-center">
-                        <div className="text-lg text-red-500 mb-4">{error}</div>
-                        <Button
-                            onClick={fetchEvents}
-                            className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                        >
-                            Try Again
-                        </Button>
-                    </div>
-                </motion.div>
-            ) : events.length === 0 ? (
-                <motion.div
-                    variants={fadeIn}
-                    className="flex justify-center items-center min-h-[400px]"
-                >
-                    <div className="text-center">
-                        <div className="text-lg text-gray-400 mb-4">No events found</div>
-                        <Button
-                            onClick={() => router.push("/admin/events/new")}
-                            className="bg-[#C8102E] hover:bg-[#800029] text-white transition-colors"
-                        >
-                            Create Your First Event
-                        </Button>
-                    </div>
-                </motion.div>
+                <div className="text-center text-gray-500">Loading events...</div>
+            ) : filteredEvents.length === 0 ? (
+                <div className="text-center text-gray-500">No events found</div>
             ) : (
-                <motion.div variants={slideIn}>
-                    <Card className="relative overflow-hidden rounded-xl border border-gray-800 bg-gradient-to-br from-gray-900 to-black backdrop-blur-lg">
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeaderCell className="text-gray-400">Event Details</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Date & Time</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Location</TableHeaderCell>
-                                    <TableHeaderCell className="text-gray-400">Status</TableHeaderCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {events.map((event) => {
-                                    const status = getEventStatus(event)
-                                    return (
-                                        <TableRow
-                                            key={event.id}
-                                            className="group hover:bg-gray-800/50 transition-colors"
-                                        >
-                                            <TableCell>
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <div className="space-y-1">
-                                                        <Text className="font-medium text-white">
-                                                            {event.title}
-                                                        </Text>
-                                                        <Text className="text-sm text-gray-400 line-clamp-2">
-                                                            {event.description}
-                                                        </Text>
-                                                        <div className="flex items-center gap-2">
-                                                            {event.category && (
-                                                                <Badge size="xs" color="cyan">
-                                                                    {event.category}
-                                                                </Badge>
-                                                            )}
-                                                            <div className="flex items-center gap-2">
-                                                                <Button
-                                                                    size="xs"
-                                                                    variant="secondary"
-                                                                    className="opacity-0 group-hover:opacity-100 transition-all hover:bg-[#C8102E] hover:text-white"
-                                                                    onClick={() => router.push(`/admin/events/${event.id}`)}
-                                                                >
-                                                                    Edit
-                                                                </Button>
-                                                                <Button
-                                                                    size="xs"
-                                                                    variant="secondary"
-                                                                    className="opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 hover:text-white"
-                                                                    onClick={() => handleDelete(event.id)}
-                                                                >
-                                                                    Delete
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-2">
-                                                    <div className="flex items-start space-x-2 text-gray-400">
-                                                        <IconClock className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                                                        <div className="space-y-1">
-                                                            <Text className="text-sm">
-                                                                {format(new Date(event.date), "PPP")}
-                                                            </Text>
-                                                            <Text className="text-sm">
-                                                                {format(new Date(event.date), "p")}
-                                                            </Text>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-2">
-                                                    <div className="flex items-start space-x-2 text-gray-400">
-                                                        <IconMapPin className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                                                        <div className="space-y-1">
-                                                            <Text className="text-sm">
-                                                                {event.venue || event.location}
-                                                            </Text>
-                                                            {event.city && event.country && (
-                                                                <Text className="text-sm">
-                                                                    {event.city}, {event.country}
-                                                                </Text>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-2">
-                                                    <Badge size="sm" color={status.color as any}>
-                                                        {status.label}
-                                                    </Badge>
-                                                    <Badge size="sm" color={getEventTypeColor(event.type) as any}>
-                                                        {event.type ? event.type.replace('_', ' ') : 'Unknown'}
-                                                    </Badge>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </motion.div>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredEvents.map((event) => (
+                        <div
+                            key={event._id}
+                            className="group relative overflow-hidden rounded-lg border border-[#222222] bg-[#111111]"
+                        >
+                            {/* Event Image */}
+                            <div className="relative aspect-video overflow-hidden">
+                                <Image
+                                    src={event.thumbnail || "/events/default-event.jpg"}
+                                    alt={event.title}
+                                    fill
+                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                <div className="absolute bottom-4 left-4 right-4">
+                                    <h3 className="text-lg font-semibold text-white line-clamp-2">
+                                        {event.title}
+                                    </h3>
+                                </div>
+                            </div>
+
+                            {/* Event Details */}
+                            <div className="p-4">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                        event.status === 'PUBLISHED' ? 'bg-green-500/20 text-green-500' :
+                                        event.status === 'DRAFT' ? 'bg-yellow-500/20 text-yellow-500' :
+                                        'bg-red-500/20 text-red-500'
+                                    }`}>
+                                        {event.status}
+                                    </span>
+                                    <span className="text-sm text-gray-400">
+                                        {formatDate(event.startDateTime)}
+                                    </span>
+                                </div>
+
+                                <p className="mb-4 text-sm text-gray-400 line-clamp-2">
+                                    {event.description}
+                                </p>
+
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    <span className="rounded bg-[#222222] px-2 py-1 text-xs text-gray-300">
+                                        {event.eventType}
+                                    </span>
+                                    {event.venue && (
+                                        <span className="rounded bg-[#222222] px-2 py-1 text-xs text-gray-300">
+                                            📍 {event.venue}
+                                        </span>
+                                    )}
+                                    {event.capacity && (
+                                        <span className="rounded bg-[#222222] px-2 py-1 text-xs text-gray-300">
+                                            👥 {event.capacity} spots
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-between border-t border-[#222222] pt-4">
+                                    <Link
+                                        href={`/admin/events/${event._id}/edit`}
+                                        className="text-sm text-blue-500 hover:text-blue-400"
+                                    >
+                                        Edit
+                                    </Link>
+                                    <button
+                                        onClick={() => handleDelete(event._id)}
+                                        className="text-sm text-red-500 hover:text-red-400"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             )}
-        </motion.div>
+        </div>
     )
 } 

@@ -1,100 +1,135 @@
 import { NextResponse } from "next/server"
-import { Prisma } from "@prisma/client"
-import { prisma } from "@/lib/prisma"
+import { writeFile, unlink } from "fs/promises"
+import path from "path"
+import dbConnect from "@/lib/mongodb"
+import Sponsor from "@/models/Sponsor"
 
 export async function GET(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        const sponsor = await prisma.sponsor.findUnique({
-            where: {
-                id: params.id,
-            },
-        })
-
+        await dbConnect()
+        const sponsor = await Sponsor.findById(params.id)
+        
         if (!sponsor) {
             return NextResponse.json(
-                { error: { message: "Sponsor not found" } },
+                { error: "Sponsor not found" },
                 { status: 404 }
             )
         }
 
-        return NextResponse.json({ data: sponsor }, { status: 200 })
+        return NextResponse.json(sponsor)
     } catch (error) {
-        console.error("Error fetching sponsor:", error)
         return NextResponse.json(
-            { error: { message: "Failed to fetch sponsor" } },
+            { error: "Error fetching sponsor" },
             { status: 500 }
         )
     }
 }
 
 export async function PUT(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        const json = await request.json()
-
-        // Validate required fields
-        if (!json.name || !json.description || !json.tier || !json.startDate) {
+        await dbConnect()
+        
+        const formData = await req.formData()
+        const sponsor = await Sponsor.findById(params.id)
+        
+        if (!sponsor) {
             return NextResponse.json(
-                {
-                    error: {
-                        message: "Missing required fields",
-                    },
-                },
-                { status: 400 }
+                { error: "Sponsor not found" },
+                { status: 404 }
             )
         }
 
-        // Update sponsor
-        const sponsor = await prisma.sponsor.update({
-            where: {
-                id: params.id,
-            },
-            data: {
-                name: json.name,
-                description: json.description,
-                website: json.website || null,
-                logo: json.logo || null,
-                tier: json.tier,
-                startDate: new Date(json.startDate),
-                endDate: json.endDate ? new Date(json.endDate) : null,
-                isActive: json.isActive,
-                contactName: json.contactName || null,
-                contactEmail: json.contactEmail || null,
-                contactPhone: json.contactPhone || null,
-            } as Prisma.SponsorUpdateInput,
-        })
+        // Handle new logo if provided
+        const file = formData.get("logo") as File
+        let logoPath = sponsor.logo // Keep existing logo by default
 
-        return NextResponse.json({ data: sponsor }, { status: 200 })
+        if (file) {
+            // Delete old logo
+            if (sponsor.logo) {
+                const oldPath = path.join(process.cwd(), "public", sponsor.logo)
+                try {
+                    await unlink(oldPath)
+                } catch (error) {
+                    console.error("Error deleting old logo:", error)
+                }
+            }
+
+            // Save new logo
+            const bytes = await file.arrayBuffer()
+            const buffer = Buffer.from(bytes)
+            const filename = `${Date.now()}-${file.name}`
+            const filepath = path.join(process.cwd(), "public/uploads", filename)
+            await writeFile(filepath, buffer)
+            logoPath = `/uploads/${filename}`
+        }
+
+        // Update sponsor
+        const updatedSponsor = await Sponsor.findByIdAndUpdate(
+            params.id,
+            {
+                name: formData.get("name"),
+                description: formData.get("description"),
+                email: formData.get("email"),
+                phone: formData.get("phone"),
+                website: formData.get("website"),
+                sponsorshipLevel: formData.get("sponsorshipLevel"),
+                logo: logoPath,
+            },
+            { new: true }
+        )
+
+        return NextResponse.json(updatedSponsor)
     } catch (error) {
         console.error("Error updating sponsor:", error)
         return NextResponse.json(
-            { error: { message: "Failed to update sponsor" } },
+            { error: "Error updating sponsor" },
             { status: 500 }
         )
     }
 }
 
 export async function DELETE(
-    request: Request,
+    req: Request,
     { params }: { params: { id: string } }
 ) {
     try {
-        await prisma.sponsor.delete({
-            where: {
-                id: params.id,
-            },
-        })
+        await dbConnect()
+        
+        const sponsor = await Sponsor.findById(params.id)
+        if (!sponsor) {
+            return NextResponse.json(
+                { error: "Sponsor not found" },
+                { status: 404 }
+            )
+        }
 
-        return new NextResponse(null, { status: 204 })
+        // Delete logo file
+        if (sponsor.logo) {
+            const filepath = path.join(process.cwd(), "public", sponsor.logo)
+            try {
+                await unlink(filepath)
+            } catch (error) {
+                console.error("Error deleting logo:", error)
+            }
+        }
+
+        // Delete sponsor from database
+        await Sponsor.findByIdAndDelete(params.id)
+
+        return NextResponse.json(
+            { message: "Sponsor deleted successfully" },
+            { status: 200 }
+        )
     } catch (error) {
         console.error("Error deleting sponsor:", error)
         return NextResponse.json(
-            { error: { message: "Failed to delete sponsor" } },
+            { error: "Error deleting sponsor" },
             { status: 500 }
         )
     }

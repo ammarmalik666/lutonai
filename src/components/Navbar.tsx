@@ -6,12 +6,27 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
-const menuItems = [
-    { href: "/", label: "Home" },
-    { href: "/events", label: "Events" },
-    { href: "/community", label: "Community" },
-    { href: "/opportunities", label: "Opportunities" },
-    { href: "/about", label: "About" },
+const routes = [
+    {
+        label: "Home",
+        href: "/",
+    },
+    {
+        label: "About",
+        href: "/about",
+    },
+    {
+        label: "Events",
+        href: "/events",
+    },
+    {
+        label: "Projects",
+        href: "/projects",
+    },
+    {
+        label: "Contact",
+        href: "/contact",
+    },
 ]
 
 export default function Navbar() {
@@ -38,7 +53,7 @@ export default function Navbar() {
                     {/* Desktop Menu - Now pushed to the right */}
                     <div className="hidden md:flex md:flex-1 md:justify-end">
                         <div className="flex items-center space-x-8">
-                            {menuItems.map((item) => (
+                            {routes.map((item) => (
                                 <Link
                                     key={item.href}
                                     href={item.href}
@@ -106,7 +121,7 @@ export default function Navbar() {
                 }}
             >
                 <div className="space-y-1 px-4 pb-3 pt-2">
-                    {menuItems.map((item) => (
+                    {routes.map((item) => (
                         <Link
                             key={item.href}
                             href={item.href}

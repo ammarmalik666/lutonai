@@ -5,8 +5,38 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { fadeIn, staggerContainer, slideIn, scaleIn, cardHover } from "@/lib/animations"
+import { useEffect, useState } from "react"
+
+interface Sponsor {
+  _id: string
+  name: string
+  logo: string
+  website: string
+  sponsorshipLevel: string
+}
 
 export default function HomePage() {
+  const [sponsors, setSponsors] = useState<Sponsor[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchSponsors = async () => {
+      try {
+        const response = await fetch('/api/sponsors')
+        const data = await response.json()
+        if (data.sponsors) {
+          setSponsors(data.sponsors.slice(0, 5)) // Get only first 5 sponsors
+        }
+      } catch (error) {
+        console.error('Error fetching sponsors:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSponsors()
+  }, [])
+
   return (
     <>
       {/* Hero Section */}
@@ -469,69 +499,53 @@ export default function HomePage() {
             </motion.p>
           </motion.div>
 
-          <motion.div
-            className="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            {[
-              {
-                name: "University of Bedfordshire",
-                logo: "/sponsors/uob.svg",
-                link: "https://www.beds.ac.uk"
-              },
-              {
-                name: "Luton Borough Council",
-                logo: "/sponsors/luton-council.svg",
-                link: "https://www.luton.gov.uk"
-              },
-              {
-                name: "Luton Town FC",
-                logo: "/sponsors/luton-town.svg",
-                link: "https://www.lutontown.co.uk/en"
-              },
-              {
-                name: "Luton Point",
-                logo: "/sponsors/mall-luton.svg",
-                link: "https://www.themall.co.uk/luton"
-              },
-              {
-                name: "Switchshop",
-                logo: "/sponsors/switch-shop.svg",
-                link: "https://switchshop.co.uk/"
-              }
-            ].map((sponsor) => (
-              <motion.div
-                key={sponsor.name}
-                variants={fadeIn}
-                className="group relative flex aspect-square"
-              >
-                <motion.a
-                  href={sponsor.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex w-full flex-col overflow-hidden rounded-xl border-2 border-[#C8102E] bg-white shadow-lg transition-all duration-300 hover:border-[#C8102E]/70 hover:shadow-xl hover:shadow-[#C8102E]/10"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+          {loading ? (
+            <div className="mt-16 text-center text-muted-foreground">
+              Loading sponsors...
+            </div>
+          ) : sponsors.length > 0 ? (
+            <motion.div
+              className="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={staggerContainer}
+            >
+              {sponsors.map((sponsor) => (
+                <motion.div
+                  key={sponsor._id}
+                  variants={fadeIn}
+                  className="group relative flex aspect-square"
                 >
-                  <div className="flex-1 relative p-6">
-                    <Image
-                      src={sponsor.logo}
-                      alt={sponsor.name}
-                      fill
-                      className="object-contain p-4 transition-transform duration-300 group-hover:scale-110"
-                      sizes="(max-width: 768px) 40vw, (max-width: 1200px) 25vw, 20vw"
-                    />
-                  </div>
-                  <div className="border-t border-[#C8102E]/20 bg-white p-3 text-center">
-                    <p className="text-sm font-medium text-gray-800">{sponsor.name}</p>
-                  </div>
-                </motion.a>
-              </motion.div>
-            ))}
-          </motion.div>
+                  <motion.a
+                    href={sponsor.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full flex-col overflow-hidden rounded-xl border-2 border-[#C8102E] bg-white shadow-lg transition-all duration-300 hover:border-[#C8102E]/70 hover:shadow-xl hover:shadow-[#C8102E]/10"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="flex-1 relative p-6">
+                      <Image
+                        src={sponsor.logo}
+                        alt={sponsor.name}
+                        fill
+                        className="object-contain p-4 transition-transform duration-300 group-hover:scale-110"
+                        sizes="(max-width: 768px) 40vw, (max-width: 1200px) 25vw, 20vw"
+                      />
+                    </div>
+                    <div className="border-t border-[#C8102E]/20 bg-white p-3 text-center">
+                      <p className="text-sm font-medium text-gray-800">{sponsor.name}</p>
+                    </div>
+                  </motion.a>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <div className="mt-16 text-center text-muted-foreground">
+              No sponsors available at the moment.
+            </div>
+          )}
 
           <motion.div
             className="mt-16 text-center"

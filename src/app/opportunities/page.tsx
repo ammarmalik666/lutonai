@@ -19,6 +19,8 @@ interface Opportunity {
   salary?: string
   deadline: string
   createdAt: string
+  category: string
+  level: string
 }
 
 export default function OpportunitiesPage() {
@@ -147,10 +149,29 @@ export default function OpportunitiesPage() {
                     {opportunity.description}
                   </p>
                   <div className="mt-4 space-y-2 text-sm text-[#000000]/60">
-                    <p>🏢 {opportunity.companyName}</p>
-                    <p>📍 {opportunity.location}</p>
-                    {opportunity.deadline && (
-                      <p>⏰ Deadline: {new Date(opportunity.deadline).toLocaleDateString()}</p>
+                    {opportunity.category && (
+                        <p>
+                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                                Category: {opportunity.category}
+                            </span>
+                        </p>
+                    )}
+                    {opportunity.experienceLevel && (
+                        <p>
+                            <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
+                                Level: {opportunity.experienceLevel}
+                            </span>
+                        </p>
+                    )}
+                    {opportunity.applicationDeadline && (
+                        <p className="flex items-center">
+                            <span className="mr-2">⏰</span>
+                            Application Deadline: {new Date(opportunity.applicationDeadline).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                            })}
+                        </p>
                     )}
                   </div>
                   <ApplicationForm opportunityId={opportunity._id} />

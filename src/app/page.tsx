@@ -5,38 +5,12 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { fadeIn, staggerContainer, slideIn, scaleIn, cardHover } from "@/lib/animations"
-import { useEffect, useState } from "react"
-
-interface Sponsor {
-  _id: string
-  name: string
-  logo: string
-  website: string
-  sponsorshipLevel: string
-}
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Autoplay, Pagination } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/pagination'
 
 export default function HomePage() {
-  const [sponsors, setSponsors] = useState<Sponsor[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchSponsors = async () => {
-      try {
-        const response = await fetch('/api/sponsors')
-        const data = await response.json()
-        if (data.sponsors) {
-          setSponsors(data.sponsors.slice(0, 5)) // Get only first 5 sponsors
-        }
-      } catch (error) {
-        console.error('Error fetching sponsors:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchSponsors()
-  }, [])
-
   return (
     <>
       {/* Hero Section */}
@@ -475,6 +449,123 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="relative overflow-hidden bg-[#F2F2F2] py-20">
+        <div className="container relative">
+          <motion.div
+            className="mx-auto max-w-2xl text-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.h2
+              className="text-gradient text-3xl font-bold tracking-tight sm:text-4xl"
+              variants={fadeIn}
+            >
+              What Our Members Say
+            </motion.h2>
+            <motion.p
+              className="mt-6 text-lg leading-8 text-muted-foreground"
+              variants={fadeIn}
+            >
+              Hear from our community members about their experiences with Luton AI Club
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            className="mx-auto mt-16 max-w-6xl"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeIn}
+          >
+            <Swiper
+              modules={[Autoplay, Pagination]}
+              spaceBetween={30}
+              slidesPerView={1}
+              autoplay={{
+                delay: 5000,
+                disableOnInteraction: false,
+              }}
+              pagination={{
+                clickable: true,
+                bulletClass: 'swiper-pagination-bullet custom-bullet',
+                bulletActiveClass: 'swiper-pagination-bullet-active custom-bullet-active',
+              }}
+              breakpoints={{
+                768: {
+                  slidesPerView: 2,
+                },
+              }}
+              className="!pb-14"
+            >
+              {[
+                {
+                  name: "Julia",
+                  position: "CMO, TAFU",
+                  image: "/julia.png",
+                  comment: "As a passionate advocate for the use of AI, committed to implementing ethical principles into its development and application, I am excited to contribute to the growing AI community at University of Bedfordshire and Luton. I believe AI has the potential to transform industries, and I hope to help shape its development in a responsible and ethical direction."
+                },
+                {
+                  name: "Habib",
+                  position: "Senior Lecturer, University of Bedfordshire",
+                  image: "/images/habib.png",
+                  comment: "The AI Club is an excellent platform is a beacon of innovation and collaboration, consistently fostering a vibrant community for AI enthusiasts and professionals alike. The club's emphasis on teamwork, mentorship, and inclusivity ensures that every participant, regardless of their background, feels empowered to contribute and grow."
+                },
+                {
+                  name: "Nika",
+                  position: "President, BCS Student Chapter",
+                  image: "/nika.png",
+                  comment: "As someone who is passionate about AI and Robotics, I love how these fields push the boundaries of innovation and problem-solving. Being the chair of the BCS student chapter allows me to contribute actively not only to our university society but also to a broader network."
+                }
+              ].map((testimonial, index) => (
+                <SwiperSlide key={index} className="!height-auto">
+                  <motion.div 
+                    className="rounded-2xl bg-gradient-to-br from-[#C8102E] to-[#BD0029] p-8 shadow-xl h-auto"
+                    whileHover={{ y: -5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <div className="flex flex-col">
+                      <div className="relative mb-8">
+                        <svg
+                          className="absolute -top-4 -left-4 h-8 w-8 text-white/40"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                        </svg>
+                        <p className="text-white/90 text-lg leading-relaxed font-light">
+                          {testimonial.comment}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 pt-6 border-t border-white/20">
+                        <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white/40">
+                          <Image
+                            src={testimonial.image}
+                            alt={testimonial.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            {testimonial.name}
+                          </h3>
+                          <p className="text-sm text-white/80">
+                            {testimonial.position}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Sponsors Section */}
       <section className="relative overflow-hidden bg-background py-20">
         <div className="container relative">
@@ -499,53 +590,69 @@ export default function HomePage() {
             </motion.p>
           </motion.div>
 
-          {loading ? (
-            <div className="mt-16 text-center text-muted-foreground">
-              Loading sponsors...
-            </div>
-          ) : sponsors.length > 0 ? (
-            <motion.div
-              className="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={staggerContainer}
-            >
-              {sponsors.map((sponsor) => (
-                <motion.div
-                  key={sponsor._id}
-                  variants={fadeIn}
-                  className="group relative flex aspect-square"
+          <motion.div
+            className="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            {[
+              {
+                name: "University of Bedfordshire",
+                logo: "/sponsors/uob.svg",
+                link: "https://www.beds.ac.uk"
+              },
+              {
+                name: "Luton Borough Council",
+                logo: "/sponsors/luton-council.svg",
+                link: "https://www.luton.gov.uk"
+              },
+              {
+                name: "Luton Town FC",
+                logo: "/sponsors/luton-town.svg",
+                link: "https://www.lutontown.co.uk/en"
+              },
+              {
+                name: "Luton Point",
+                logo: "/sponsors/mall-luton.svg",
+                link: "https://www.themall.co.uk/luton"
+              },
+              {
+                name: "Switchshop",
+                logo: "/sponsors/switch-shop.svg",
+                link: "https://switchshop.co.uk/"
+              }
+            ].map((sponsor) => (
+              <motion.div
+                key={sponsor.name}
+                variants={fadeIn}
+                className="group relative flex aspect-square"
+              >
+                <motion.a
+                  href={sponsor.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full flex-col overflow-hidden rounded-xl border-2 border-[#C8102E] bg-white shadow-lg transition-all duration-300 hover:border-[#C8102E]/70 hover:shadow-xl hover:shadow-[#C8102E]/10"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <motion.a
-                    href={sponsor.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex w-full flex-col overflow-hidden rounded-xl border-2 border-[#C8102E] bg-white shadow-lg transition-all duration-300 hover:border-[#C8102E]/70 hover:shadow-xl hover:shadow-[#C8102E]/10"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <div className="flex-1 relative p-6">
-                      <Image
-                        src={sponsor.logo}
-                        alt={sponsor.name}
-                        fill
-                        className="object-contain p-4 transition-transform duration-300 group-hover:scale-110"
-                        sizes="(max-width: 768px) 40vw, (max-width: 1200px) 25vw, 20vw"
-                      />
-                    </div>
-                    <div className="border-t border-[#C8102E]/20 bg-white p-3 text-center">
-                      <p className="text-sm font-medium text-gray-800">{sponsor.name}</p>
-                    </div>
-                  </motion.a>
-                </motion.div>
-              ))}
-            </motion.div>
-          ) : (
-            <div className="mt-16 text-center text-muted-foreground">
-              No sponsors available at the moment.
-            </div>
-          )}
+                  <div className="flex-1 relative p-6">
+                    <Image
+                      src={sponsor.logo}
+                      alt={sponsor.name}
+                      fill
+                      className="object-contain p-4 transition-transform duration-300 group-hover:scale-110"
+                      sizes="(max-width: 768px) 40vw, (max-width: 1200px) 25vw, 20vw"
+                    />
+                  </div>
+                  <div className="border-t border-[#C8102E]/20 bg-white p-3 text-center">
+                    <p className="text-sm font-medium text-gray-800">{sponsor.name}</p>
+                  </div>
+                </motion.a>
+              </motion.div>
+            ))}
+          </motion.div>
 
           <motion.div
             className="mt-16 text-center"

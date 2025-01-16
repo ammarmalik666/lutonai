@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -26,7 +27,7 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     unoptimized: process.env.NODE_ENV === 'development',
-    domains: ['localhost'],
+    domains: ['localhost', 'luton.ai'],
     remotePatterns: [
       {
         protocol: 'http',

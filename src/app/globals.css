@@ -1,3 +1,4 @@
+@import "swiper/css/effect-fade";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,57 +10,57 @@
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 0%;
- 
+
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
- 
+
     --primary: 351 85% 42%;
     --primary-foreground: 0 0% 100%;
- 
+
     --secondary: 0 0% 90%;
     --secondary-foreground: 0 0% 0%;
- 
+
     --muted: 0 0% 90%;
     --muted-foreground: 0 0% 40%;
- 
+
     --accent: 0 0% 90%;
     --accent-foreground: 0 0% 0%;
- 
+
     --destructive: 351 85% 42%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 0 0% 90%;
     --input: 0 0% 90%;
     --ring: 351 85% 42%;
- 
+
     --radius: 0.5rem;
   }
- 
+
   .dark {
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
- 
+
     --card: 0 0% 0%;
     --card-foreground: 0 0% 100%;
- 
+
     --popover: 0 0% 0%;
     --popover-foreground: 0 0% 100%;
- 
+
     --primary: 351 85% 42%;
     --primary-foreground: 0 0% 100%;
- 
+
     --secondary: 0 0% 20%;
     --secondary-foreground: 0 0% 100%;
- 
+
     --muted: 0 0% 20%;
     --muted-foreground: 0 0% 60%;
- 
+
     --accent: 0 0% 20%;
     --accent-foreground: 0 0% 100%;
- 
+
     --destructive: 351 85% 42%;
     --destructive-foreground: 0 0% 100%;
- 
+
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 351 85% 42%;
@@ -97,4 +98,13 @@
 
 .tremor-Textarea-root {
   @apply border-gray-200 focus:border-brand-200 focus:ring-brand-200 dark:border-gray-600 dark:focus:border-brand-200 dark:focus:ring-brand-200;
+}
+
+/* Add these styles for the custom pagination bullets */
+.custom-bullet {
+  background-color: rgba(200, 16, 46, 0.3) !important;
+}
+
+.custom-bullet-active {
+  background-color: rgb(200, 16, 46) !important;
 }

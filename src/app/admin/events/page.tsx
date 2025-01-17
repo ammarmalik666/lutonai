@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { PlusIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, MagnifyingGlassIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { formatDate } from "@/lib/utils"
+import DeleteModal from "@/components/DeleteModal"
 
 interface Event {
     _id: string
@@ -35,7 +36,11 @@ export default function AdminEventsPage() {
     const [events, setEvents] = useState<Event[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
-
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        eventId: "",
+        eventTitle: ""
+    })
     const fetchEvents = async () => {
         try {
             setIsLoading(true)
@@ -55,21 +60,28 @@ export default function AdminEventsPage() {
         fetchEvents()
     }, [])
 
-    const handleDelete = async (eventId: string) => {
-        if (!confirm("Are you sure you want to delete this event?")) return
-
+    const handleDeleteClick = (eventId: string, eventTitle: string) => {
+        setDeleteModal({
+            isOpen: true,
+            eventId,
+            eventTitle
+        })
+    }
+    const handleDeleteConfirm = async () => {
         try {
-            const response = await fetch(`/api/admin/events/${eventId}`, {
+            const response = await fetch(`/api/events/${deleteModal.eventId}`, {
                 method: "DELETE",
             })
 
             if (!response.ok) throw new Error("Failed to delete event")
 
             toast.success("Event deleted successfully")
-            fetchEvents()
+            fetchEvents() // Refresh the posts list
         } catch (error) {
-            console.error("Error deleting event:", error)
-            toast.error("Failed to delete event")
+            toast.error("Error deleting event")
+            console.error(error)
+        } finally {
+            setDeleteModal({ isOpen: false, eventId: "", eventTitle: "" })
         }
     }
 
@@ -139,7 +151,7 @@ export default function AdminEventsPage() {
                                         event.status === 'DRAFT' ? 'bg-yellow-500/20 text-yellow-500' :
                                         'bg-red-500/20 text-red-500'
                                     }`}>
-                                        {event.status}
+                                        {event.eventType}
                                     </span>
                                     <span className="text-sm text-gray-400">
                                         {formatDate(event.startDateTime)}
@@ -169,15 +181,24 @@ export default function AdminEventsPage() {
                                 {/* Actions */}
                                 <div className="flex items-center justify-between border-t border-[#222222] pt-4">
                                     <Link
-                                        href={`/admin/events/${event._id}/edit`}
-                                        className="text-sm text-blue-500 hover:text-blue-400"
+                                        href={`/admin/events/edit/${event._id}`}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
                                     >
+                                        <PencilSquareIcon className="h-4 w-4" />
                                         Edit
                                     </Link>
-                                    <button
-                                        onClick={() => handleDelete(event._id)}
-                                        className="text-sm text-red-500 hover:text-red-400"
+                                    {/* <button 
+                                        onClick={() => router.push(`/admin/events/edit/${event._id}`)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
                                     >
+                                        <PencilSquareIcon className="h-4 w-4" />
+                                        Edit
+                                    </button> */}
+                                    <button 
+                                        onClick={() => handleDeleteClick(event._id, event.title)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
+                                    >
+                                        <TrashIcon className="h-4 w-4" />
                                         Delete
                                     </button>
                                 </div>
@@ -186,6 +207,12 @@ export default function AdminEventsPage() {
                     ))}
                 </div>
             )}
+            <DeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, eventId: "", eventTitle: "" })}
+                onConfirm={handleDeleteConfirm}
+                title={deleteModal.eventTitle}
+            />
         </div>
     )
 } 

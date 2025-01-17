@@ -212,7 +212,7 @@ export default function ContactPage() {
                 variants={fadeIn}
               >
                 <h3 className="mb-3 text-xl font-semibold text-white">Visit Us</h3>
-                <p className="text-white/80">123 Innovation Street<br />Luton, LU1 1AA<br />United Kingdom</p>
+                <p className="text-white/80">Park Square<br />Luton LU1 3JU<br />United Kingdom</p>
               </motion.div>
               <motion.div
                 className="rounded-lg bg-black/30 p-6 text-center"
@@ -226,7 +226,7 @@ export default function ContactPage() {
                 variants={fadeIn}
               >
                 <h3 className="mb-3 text-xl font-semibold text-white">Email Us</h3>
-                <p className="text-white/80">General: info@lutonai.org<br />Support: support@lutonai.org</p>
+                <p className="text-white/80">General: info@luton.ai<br />Support: support@luton.ai</p>
               </motion.div>
               <motion.div
                 className="rounded-lg bg-black/30 p-6 text-center"

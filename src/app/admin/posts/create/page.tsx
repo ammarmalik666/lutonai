@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Editor } from "@tinymce/tinymce-react"
 import { toast } from "sonner"
+import slugify from "slugify"
 
 // Validation schema
 const createPostSchema = z.object({
@@ -30,7 +31,7 @@ const createPostSchema = z.object({
                 ["image/jpeg", "image/jpg", "image/png"].includes(files?.[0]?.type),
             "Only .jpg, .jpeg, and .png files are allowed"
         ),
-})
+});
 
 type CreatePostForm = z.infer<typeof createPostSchema>
 
@@ -66,37 +67,45 @@ export default function CreatePost() {
         setTags(newTags)
         setValue("tags", newTags)
     }
-
+    // const generateSlug = (title: string) => {
+    //     return title
+    //         .toLowerCase()
+    //         .trim()
+    //         .replace(/[^\w\s-]/g, '')  // Remove special characters
+    //         .replace(/\s+/g, '-')      // Replace spaces with hyphens
+    //         .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
+    // }
     const onSubmit = async (data: CreatePostForm) => {
         try {
-            setIsSubmitting(true)
-
-            // Create FormData for file upload
-            const formData = new FormData()
-            formData.append("title", data.title)
-            formData.append("content", data.content)
-            formData.append("category", data.category)
-            formData.append("tags", JSON.stringify(tags))
-            formData.append("thumbnail", data.thumbnail[0])
-
+            setIsSubmitting(true);
+    
+            const formData = new FormData();
+            formData.append("title", data.title);
+            formData.append("content", data.content);
+            formData.append("category", data.category);
+            formData.append("tags", JSON.stringify(tags));
+            formData.append("thumbnail", data.thumbnail[0]); // Ensure this is a file
+    
             const response = await fetch("/api/posts", {
                 method: "POST",
                 body: formData,
-            })
-
+            });
+    
             if (!response.ok) {
-                throw new Error("Failed to create post")
+                throw new Error("Failed to create post");
             }
-
-            toast.success("Post created successfully!")
-            router.push("/admin/posts")
+    
+            const result = await response.json();
+            // console.log(result)
+            toast.success("Post created successfully!");
+            router.push("/admin/posts");
         } catch (error) {
-            toast.error("Error creating post")
-            console.error(error)
+            toast.error("Error creating post");
+            console.error(error);
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
         }
-    }
+    };
 
     return (
         <div className="max-w-4xl mx-auto">

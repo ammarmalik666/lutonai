@@ -157,12 +157,13 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
                         {/* Content with TinyMCE HTML */}
                         <motion.div
-                            className="prose prose-lg mx-auto max-w-none prose-headings:text-[#C8102E] prose-a:text-[#C8102E] prose-strong:text-[#C8102E]"
+                            className="prose prose-lg mx-auto max-w-none"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            dangerouslySetInnerHTML={{ __html: post.content }}
-                        />
+                        >
+                            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+                        </motion.div>
 
                         {/* Tags */}
                         {post.tags && post.tags.length > 0 && (
@@ -172,14 +173,16 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                {post.tags.map((tag: string) => (
-                                    <span
-                                        key={tag}
-                                        className="rounded-full bg-[#C8102E]/5 px-4 py-2 text-sm font-medium text-[#C8102E] transition-colors hover:bg-[#C8102E]/10"
-                                    >
-                                        #{tag.trim()}
-                                    </span>
-                                ))}
+                                {post.tags.flatMap((tag: string) => 
+                                    tag.split(',').map(subTag => (
+                                        <span
+                                            key={subTag}
+                                            className="rounded-full bg-[#C8102E]/5 px-4 py-2 text-sm font-medium text-[#C8102E] transition-colors hover:bg-[#C8102E]/10"
+                                        >
+                                            {subTag.replace(/[\[\]"]/g, '').trim()}
+                                        </span>
+                                    ))
+                                )}
                             </motion.div>
                         )}
                     </div>

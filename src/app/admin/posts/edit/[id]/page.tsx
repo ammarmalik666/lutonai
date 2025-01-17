@@ -57,12 +57,16 @@ export default function EditPost({ params }: { params: { id: string } }) {
                 if (!response.ok) throw new Error("Failed to fetch post")
                 const post = await response.json()
                 
+                // Handle tags without JSON.parse
+                const tags = Array.isArray(post.data.tags) ? post.data.tags : [post.data.tags]
+                
                 // Set form values
-                setValue("title", post.title)
-                setValue("content", post.content)
-                setValue("category", post.category)
-                setTags(post.tags || [])
-                setCurrentThumbnail(post.thumbnail)
+                setValue("title", post.data.title || "")
+                setValue("content", post.data.content || "")
+                setValue("category", post.data.category || "")
+                setTags(tags)
+                setValue("tags", tags)
+                setCurrentThumbnail(post.data.thumbnail || "")
             } catch (error) {
                 toast.error("Error loading post")
                 console.error(error)
@@ -92,15 +96,26 @@ export default function EditPost({ params }: { params: { id: string } }) {
         setValue("tags", newTags)
     }
 
+    const generateSlug = (title: string) => {
+        return title
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+    }
+
     const onSubmit = async (data: EditPostForm) => {
         try {
             setIsSubmitting(true)
+            const slug = generateSlug(data.title)
 
             const formData = new FormData()
             formData.append("title", data.title)
             formData.append("content", data.content)
             formData.append("category", data.category)
             formData.append("tags", JSON.stringify(tags))
+            formData.append("slug", slug)
             
             if (data.thumbnail?.[0]) {
                 formData.append("thumbnail", data.thumbnail[0])

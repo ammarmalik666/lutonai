@@ -19,6 +19,7 @@ interface Post {
     category: string
     thumbnail: string
     createdAt: string
+    content: string
 }
 
 export default function Posts() {
@@ -44,8 +45,8 @@ export default function Posts() {
             if (!response.ok) throw new Error("Failed to fetch posts")
             
             const data = await response.json()
-            setPosts(data.posts)
-            setTotalPages(data.totalPages)
+            setPosts(data.data.posts)
+            setTotalPages(data.data.totalPages)
         } catch (error) {
             toast.error("Error loading posts")
             console.error(error)
@@ -148,20 +149,6 @@ export default function Posts() {
                                     fill
                                     className="object-cover"
                                 />
-                                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
-                                    <button 
-                                        onClick={() => router.push(`/admin/posts/edit/${post._id}`)}
-                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                                    >
-                                        <PencilSquareIcon className="h-5 w-5 text-white" />
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeleteClick(post._id, post.title)}
-                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                                    >
-                                        <TrashIcon className="h-5 w-5 text-red-500" />
-                                    </button>
-                                </div>
                             </div>
                             <div className="p-4">
                                 <span className="inline-block px-3 py-1 text-xs font-semibold text-red-500 border border-red-500 rounded-full mb-2">
@@ -169,7 +156,7 @@ export default function Posts() {
                                 </span>
                                 <h3 
                                     onClick={() => router.push(`/admin/posts/view/${post._id}`)}
-                                    className="text-white text-lg font-semibold cursor-pointer hover:text-red-500 transition-colors truncate"
+                                    className="text-white text-lg font-semibold cursor-pointer hover:text-red-500 transition-colors truncate mb-2"
                                     title={post.title}
                                 >
                                     {post.title.length > 40 
@@ -177,6 +164,25 @@ export default function Posts() {
                                         : post.title
                                     }
                                 </h3>
+                                <p className="text-gray-400 text-sm line-clamp-2 mb-4">
+                                    {post.content.replace(/<[^>]+>/g, '')}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => router.push(`/admin/posts/edit/${post._id}`)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                                    >
+                                        <PencilSquareIcon className="h-4 w-4" />
+                                        Edit
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteClick(post._id, post.title)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
+                                    >
+                                        <TrashIcon className="h-4 w-4" />
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

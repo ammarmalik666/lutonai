@@ -27,7 +27,13 @@ export default function PostDetail({ params }: { params: { id: string } }) {
                 const response = await fetch(`/api/posts/${params.id}`)
                 if (!response.ok) throw new Error("Failed to fetch post")
                 const data = await response.json()
-                setPost(data)
+                
+                const postData = {
+                    ...data.data,
+                    tags: Array.isArray(data.data.tags) ? data.data.tags : [data.data.tags]
+                }
+                
+                setPost(postData)
             } catch (error) {
                 toast.error("Error loading post")
                 console.error(error)
@@ -38,6 +44,14 @@ export default function PostDetail({ params }: { params: { id: string } }) {
 
         fetchPost()
     }, [params.id])
+
+    const formatDate = (dateString: string) => {
+        try {
+            return format(new Date(dateString), "MMMM d, yyyy")
+        } catch {
+            return "Date unavailable"
+        }
+    }
 
     if (isLoading) {
         return (
@@ -96,7 +110,7 @@ export default function PostDetail({ params }: { params: { id: string } }) {
                     {/* Meta Information */}
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-4">
                         <time dateTime={post.createdAt}>
-                            {format(new Date(post.createdAt), "MMMM d, yyyy")}
+                            {formatDate(post.createdAt)}
                         </time>
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
                         <span className="text-red-500 font-medium">
@@ -112,12 +126,12 @@ export default function PostDetail({ params }: { params: { id: string } }) {
                     {/* Tags */}
                     {post.tags && post.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-6">
-                            {post.tags.map((tag, index) => (
+                            {post.tags.map((tag: string, index: number) => (
                                 <span
                                     key={index}
-                                    className="bg-red-500/10 text-red-500 px-3 py-1 rounded-full text-sm"
+                                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-400 border border-red-500/20 shadow-sm hover:bg-red-500/30 transition-colors duration-200"
                                 >
-                                    {tag}
+                                    {tag.trim()}
                                 </span>
                             ))}
                         </div>

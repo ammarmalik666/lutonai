@@ -5,6 +5,8 @@ import { mkdir } from "fs/promises"
 import path from "path"
 import { writeFile } from "fs/promises"
 import slugify from "slugify";
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
+
 export async function GET() {
     try {
         await dbConnect()
@@ -39,23 +41,13 @@ export async function POST(req: Request) {
             throw new Error("No thumbnail provided")
         }
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), "public/uploads")
-        try {
-            await writeFile(path.join(uploadsDir, "test.txt"), "")
-        } catch (error) {
-            await mkdir(uploadsDir, { recursive: true })
-        }
-
-        // Save thumbnail
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        const filename = `${Date.now()}-${file.name}`
-        const filepath = path.join(uploadsDir, filename)
-        await writeFile(filepath, buffer)
-        // Generate a URL-friendly slug from the title
+        const buffer = Buffer.from(await file.arrayBuffer())
+        const fileName = `${Date.now()}-${file.name}`
         
-        // postslug = slug
+        const fileUrl = await uploadToGoogleDrive(buffer, fileName)
+
+        // return NextResponse.json({ url: fileUrl })
+
         // Create event with thumbnail URL
         const post = await Post.create({
             title: formData.get("title"),
@@ -63,16 +55,12 @@ export async function POST(req: Request) {
             content: formData.get("content"),
             category: formData.get("category"),
             tags: formData.get("tags"),
-            thumbnail: `/uploads/${filename}`,
+            thumbnail: fileUrl,
             createdAt: new Date(),
         })
         
 
-        // Add slug to post data
-        // console.log(post)
-        // await post.save()
         return NextResponse.json({ success: true, data: { post } }, { status: 201 })
-        // return NextResponse.json(post, { status: 201 })
     } catch (error) {
         console.error("Post creating event:", error)
         return NextResponse.json(

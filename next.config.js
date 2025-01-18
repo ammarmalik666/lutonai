@@ -27,7 +27,7 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     unoptimized: process.env.NODE_ENV === 'development',
-    domains: ['localhost', 'luton.ai'],
+    domains: ['localhost', 'luton.ai', 'drive.google.com'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -39,6 +39,16 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  images: {
+    domains: ['drive.google.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'drive.google.com',
+        pathname: '/thumbnail**',
+      },
+    ],
   },
 }
 

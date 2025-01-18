@@ -39,7 +39,7 @@ export default function CreatePost() {
     const router = useRouter()
     const [tags, setTags] = useState<string[]>([])
     const [isSubmitting, setIsSubmitting] = useState(false)
-
+    const [imageUrl, setImageUrl] = useState("")
     const {
         register,
         handleSubmit,
@@ -219,8 +219,7 @@ export default function CreatePost() {
                         <p className="text-red-500 mt-1">{errors.thumbnail.message}</p>
                     )}
                 </div>
-
-                {/* Submit Button */}
+                    {/* Submit Button */}
                 <button
                     type="submit"
                     disabled={isSubmitting}

@@ -3,6 +3,8 @@ import { writeFile, unlink } from "fs/promises"
 import path from "path"
 import dbConnect from "@/lib/mongodb"
 import Post from "@/models/Post"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
+import slugify from "slugify"
 
 export async function GET(
     req: Request,
@@ -31,15 +33,41 @@ export async function GET(
 }
 
 export async function PUT(
-    req: Request,
+    request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         await dbConnect()
+        const formData = await request.formData()
         
-        const formData = await req.formData()
-        const post = await Post.findById(params.id)
-        
+        // Parse tags properly
+        const tags = formData.get("tags")
+        const parsedTags = tags ? JSON.parse(tags as string) : []
+
+        const updateData: any = {
+            title: formData.get("title"),
+            content: formData.get("content"),
+            category: formData.get("category"),
+            tags: parsedTags, // Use the parsed tags array
+            slug: slugify(formData.get("title") as string, { lower: true, strict: true, trim: true }),
+            updatedAt: new Date(),
+        }
+
+        // Handle new thumbnail if provided
+        const file = formData.get("thumbnail") as File
+        if (file?.size > 0) {
+            const fileBuffer = Buffer.from(await file.arrayBuffer())
+            const fileName = `${Date.now()}-${file.name}`
+            const fileUrl = await uploadToGoogleDrive(fileBuffer, fileName)
+            updateData.thumbnail = fileUrl
+        }
+
+        const post = await Post.findByIdAndUpdate(
+            params.id,
+            updateData,
+            { new: true }
+        )
+
         if (!post) {
             return NextResponse.json(
                 { error: "Post not found" },
@@ -47,48 +75,11 @@ export async function PUT(
             )
         }
 
-        // Handle new thumbnail if provided
-        const file = formData.get("thumbnail") as File
-        let thumbnailPath = post.thumbnail // Keep existing thumbnail by default
-
-        if (file) {
-            // Delete old thumbnail
-            if (post.thumbnail) {
-                const oldPath = path.join(process.cwd(), "public", post.thumbnail)
-                try {
-                    await unlink(oldPath)
-                } catch (error) {
-                    console.error("Error deleting old thumbnail:", error)
-                }
-            }
-
-            // Save new thumbnail
-            const bytes = await file.arrayBuffer()
-            const buffer = Buffer.from(bytes)
-            const filename = `${Date.now()}-${file.name}`
-            const filepath = path.join(process.cwd(), "public/uploads", filename)
-            await writeFile(filepath, buffer)
-            thumbnailPath = `/uploads/${filename}`
-        }
-
-        // Update post
-        const updatedPost = await Post.findByIdAndUpdate(
-            params.id,
-            {
-                title: formData.get("title"),
-                content: formData.get("content"),
-                category: formData.get("category"),
-                tags: JSON.parse(formData.get("tags") as string),
-                thumbnail: thumbnailPath,
-            },
-            { new: true }
-        )
-
-        return NextResponse.json(updatedPost)
+        return NextResponse.json({ success: true, data: post })
     } catch (error) {
         console.error("Error updating post:", error)
         return NextResponse.json(
-            { error: "Error updating post" },
+            { error: "Failed to update post" },
             { status: 500 }
         )
     }

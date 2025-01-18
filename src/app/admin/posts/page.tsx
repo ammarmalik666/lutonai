@@ -142,14 +142,18 @@ export default function Posts() {
                             key={post._id}
                             className="group bg-[#000000] rounded-lg overflow-hidden transition-all duration-200 relative"
                         >
-                            <div className="relative h-48 w-full">
-                                <Image
-                                    src={post.thumbnail}
-                                    alt={post.title}
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
+                            {post.thumbnail && (
+                                <div className="relative aspect-video overflow-hidden rounded-lg">
+                                    <Image
+                                        src={post.thumbnail}
+                                        alt={post.title}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        priority
+                                    />
+                                </div>
+                            )}
                             <div className="p-4">
                                 <span className="inline-block px-3 py-1 text-xs font-semibold text-red-500 border border-red-500 rounded-full mb-2">
                                     {post.category}

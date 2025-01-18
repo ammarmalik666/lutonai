@@ -80,16 +80,6 @@ export default function SignInPage() {
                             {isLoading ? "Signing in..." : "Sign In"}
                         </Button>
                     </form>
-
-                    <div className="mt-4 text-center text-gray-400">
-                        Don't have an account?{" "}
-                        <Link
-                            href="/auth/register"
-                            className="text-brand-600 hover:text-brand-500"
-                        >
-                            Register
-                        </Link>
-                    </div>
                 </Card>
             </div>
         </div>

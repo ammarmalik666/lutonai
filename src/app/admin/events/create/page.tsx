@@ -97,9 +97,9 @@ export default function CreateEvent() {
             })
 
             if (!response.ok) throw new Error("Failed to create event")
-
-            toast.success("Event created successfully!")
-            router.push("/admin/events")
+            console.log(response)
+            // toast.success("Event created successfully!")
+            // router.push("/admin/events")
         } catch (error) {
             toast.error("Error creating event")
             console.error(error)

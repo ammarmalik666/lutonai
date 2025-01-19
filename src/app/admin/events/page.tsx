@@ -138,7 +138,12 @@ export default function AdminEventsPage() {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                 <div className="absolute bottom-4 left-4 right-4">
                                     <h3 className="text-lg font-semibold text-white line-clamp-2">
-                                        {event.title}
+                                        <Link 
+                                            href={`/admin/events/view/${event._id}`}
+                                            className="text-white hover:text-red-500 transition-colors"
+                                        >
+                                            {event.title}
+                                        </Link>
                                     </h3>
                                 </div>
                             </div>

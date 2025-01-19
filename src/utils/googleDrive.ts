@@ -41,7 +41,7 @@ export async function uploadToGoogleDrive(file: Buffer, fileName: string) {
             },
         })
 
-        return `https://drive.google.com/thumbnail?id=${response.data.id}`
+        return `https://drive.google.com/uc?id=${response.data.id}`
     } catch (error) {
         console.error('Error uploading to Google Drive:', error)
         throw error

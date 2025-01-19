@@ -3,6 +3,7 @@ import { writeFile, unlink } from "fs/promises"
 import path from "path"
 import dbConnect from "@/lib/mongodb"
 import Opportunity from "@/models/Opportunity"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
 
 export async function GET(
     req: Request,
@@ -29,15 +30,48 @@ export async function GET(
 }
 
 export async function PUT(
-    req: Request,
+    request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         await dbConnect()
-        
-        const formData = await req.formData()
-        const opportunity = await Opportunity.findById(params.id)
-        
+        const formData = await request.formData()
+
+        const updateData: any = {
+            title: formData.get("title"),
+            description: formData.get("description"),
+            type: formData.get("type"),
+            category: formData.get("category"),
+            level: formData.get("level"),
+            commitment: formData.get("commitment"),
+            skills: JSON.parse(formData.get("skills") as string),
+            location: formData.get("location"),
+            applicationUrl: formData.get("applicationUrl"),
+            startDate: formData.get("startDate"),
+            endDate: formData.get("endDate"),
+            applicationDeadline: formData.get("applicationDeadline"),
+            contactName: formData.get("contactName"),
+            contactEmail: formData.get("contactEmail"),
+            contactPhone: formData.get("contactPhone"),
+            remoteAvailable: formData.get("remoteAvailable") === "true",
+            updatedAt: new Date(),
+        }
+
+        // Handle new company logo if provided
+        const file = formData.get("companyLogo") as File
+        if (file?.size > 0) {
+            const fileBuffer = Buffer.from(await file.arrayBuffer())
+            const fileName = `${Date.now()}-${file.name}`
+            const fileUrl = await uploadToGoogleDrive(fileBuffer, fileName)
+            updateData.companyLogo = fileUrl
+        }
+
+        const opportunity = await Opportunity.findByIdAndUpdate(
+            params.id,
+            updateData,
+            { new: true }
+        )
+
         if (!opportunity) {
             return NextResponse.json(
                 { error: "Opportunity not found" },
@@ -45,63 +79,11 @@ export async function PUT(
             )
         }
 
-        // Handle new logo if provided
-        const file = formData.get("companyLogo") as File
-        let logoPath = opportunity.companyLogo // Keep existing logo by default
-
-        if (file) {
-            // Delete old logo
-            if (opportunity.companyLogo) {
-                const oldPath = path.join(process.cwd(), "public", opportunity.companyLogo)
-                try {
-                    await unlink(oldPath)
-                } catch (error) {
-                    console.error("Error deleting old logo:", error)
-                }
-            }
-
-            // Save new logo
-            const bytes = await file.arrayBuffer()
-            const buffer = Buffer.from(bytes)
-            const filename = `${Date.now()}-${file.name}`
-            const filepath = path.join(process.cwd(), "public/uploads", filename)
-            await writeFile(filepath, buffer)
-            logoPath = `/uploads/${filename}`
-        }
-
-        // Parse skills array from JSON string
-        const skills = JSON.parse(formData.get("skills") as string)
-
-        // Update opportunity
-        const updatedOpportunity = await Opportunity.findByIdAndUpdate(
-            params.id,
-            {
-                title: formData.get("title"),
-                description: formData.get("description"),
-                type: formData.get("type"),
-                category: formData.get("category"),
-                level: formData.get("level"),
-                commitment: formData.get("commitment"),
-                skills,
-                location: formData.get("location"),
-                companyLogo: logoPath,
-                applicationUrl: formData.get("applicationUrl"),
-                startDate: formData.get("startDate") || undefined,
-                endDate: formData.get("endDate") || undefined,
-                applicationDeadline: formData.get("applicationDeadline") || undefined,
-                contactName: formData.get("contactName") || undefined,
-                contactEmail: formData.get("contactEmail") || undefined,
-                contactPhone: formData.get("contactPhone") || undefined,
-                remoteAvailable: formData.get("remoteAvailable") === "true",
-            },
-            { new: true }
-        )
-
-        return NextResponse.json(updatedOpportunity)
+        return NextResponse.json({ success: true, data: opportunity })
     } catch (error) {
         console.error("Error updating opportunity:", error)
         return NextResponse.json(
-            { error: "Error updating opportunity" },
+            { error: "Failed to update opportunity" },
             { status: 500 }
         )
     }

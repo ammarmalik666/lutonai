@@ -1,42 +1,29 @@
 import { NextResponse } from "next/server"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
 import dbConnect from "@/lib/mongodb"
 import Event from "@/models/Event"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
     try {
         await dbConnect()
+        const formData = await request.formData()
 
-        const formData = await req.formData()
-        
-        // Handle file upload
+        // Handle thumbnail upload
         const file = formData.get("thumbnail") as File
         if (!file) {
             throw new Error("No thumbnail provided")
         }
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), "public/uploads")
-        try {
-            await writeFile(path.join(uploadsDir, "test.txt"), "")
-        } catch (error) {
-            await mkdir(uploadsDir, { recursive: true })
-        }
+        const fileBuffer = Buffer.from(await file.arrayBuffer())
+        const fileName = `${Date.now()}-${file.name}`
+        const fileUrl = await uploadToGoogleDrive(fileBuffer, fileName)
 
-        // Save thumbnail
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        const filename = `${Date.now()}-${file.name}`
-        const filepath = path.join(uploadsDir, filename)
-        await writeFile(filepath, buffer)
-
-        // Create event with thumbnail URL
+        // Create event with the Google Drive URL
         const event = await Event.create({
             title: formData.get("title"),
             description: formData.get("description"),
-            startDateTime: new Date(formData.get("startDateTime") as string),
-            endDateTime: new Date(formData.get("endDateTime") as string),
+            startDateTime: formData.get("startDateTime"),
+            endDateTime: formData.get("endDateTime"),
             eventType: formData.get("eventType"),
             venue: formData.get("venue"),
             address: formData.get("address"),
@@ -45,18 +32,17 @@ export async function POST(req: Request) {
             organizers: formData.get("organizers"),
             contactEmail: formData.get("contactEmail"),
             contactPhone: formData.get("contactPhone"),
-            capacity: parseInt(formData.get("capacity") as string),
-            price: parseFloat(formData.get("price") as string),
-            registrationDeadline: new Date(formData.get("registrationDeadline") as string),
-            thumbnail: `/uploads/${filename}`,
-            createdAt: new Date(),
+            capacity: formData.get("capacity"),
+            price: formData.get("price"),
+            registrationDeadline: formData.get("registrationDeadline"),
+            thumbnail: fileUrl,  // Save the Google Drive URL
         })
 
-        return NextResponse.json(event, { status: 201 })
+        return NextResponse.json({ success: true, data: event })
     } catch (error) {
         console.error("Error creating event:", error)
         return NextResponse.json(
-            { error: "Error creating event" },
+            { error: "Failed to create event" },
             { status: 500 }
         )
     }

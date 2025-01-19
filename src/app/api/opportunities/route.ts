@@ -1,40 +1,24 @@
 import { NextResponse } from "next/server"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
 import dbConnect from "@/lib/mongodb"
 import Opportunity from "@/models/Opportunity"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
     try {
         await dbConnect()
+        const formData = await request.formData()
 
-        const formData = await req.formData()
-        
-        // Handle logo upload
+        // Handle company logo upload
         const file = formData.get("companyLogo") as File
         if (!file) {
             throw new Error("No company logo provided")
         }
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), "public/uploads")
-        try {
-            await writeFile(path.join(uploadsDir, "test.txt"), "")
-        } catch (error) {
-            await mkdir(uploadsDir, { recursive: true })
-        }
+        const fileBuffer = Buffer.from(await file.arrayBuffer())
+        const fileName = `${Date.now()}-${file.name}`
+        const fileUrl = await uploadToGoogleDrive(fileBuffer, fileName)
 
-        // Save logo
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        const filename = `${Date.now()}-${file.name}`
-        const filepath = path.join(uploadsDir, filename)
-        await writeFile(filepath, buffer)
-
-        // Parse skills array from JSON string
-        const skills = JSON.parse(formData.get("skills") as string)
-
-        // Create opportunity with logo URL
+        // Create opportunity with the Google Drive URL
         const opportunity = await Opportunity.create({
             title: formData.get("title"),
             description: formData.get("description"),
@@ -42,25 +26,25 @@ export async function POST(req: Request) {
             category: formData.get("category"),
             level: formData.get("level"),
             commitment: formData.get("commitment"),
-            skills,
+            skills: JSON.parse(formData.get("skills") as string),
             location: formData.get("location"),
-            companyLogo: `/uploads/${filename}`,
+            companyLogo: fileUrl,
             applicationUrl: formData.get("applicationUrl"),
-            startDate: formData.get("startDate") || undefined,
-            endDate: formData.get("endDate") || undefined,
-            applicationDeadline: formData.get("applicationDeadline") || undefined,
-            contactName: formData.get("contactName") || undefined,
-            contactEmail: formData.get("contactEmail") || undefined,
-            contactPhone: formData.get("contactPhone") || undefined,
+            startDate: formData.get("startDate"),
+            endDate: formData.get("endDate"),
+            applicationDeadline: formData.get("applicationDeadline"),
+            contactName: formData.get("contactName"),
+            contactEmail: formData.get("contactEmail"),
+            contactPhone: formData.get("contactPhone"),
             remoteAvailable: formData.get("remoteAvailable") === "true",
             createdAt: new Date(),
         })
 
-        return NextResponse.json(opportunity, { status: 201 })
+        return NextResponse.json({ success: true, data: opportunity })
     } catch (error) {
         console.error("Error creating opportunity:", error)
         return NextResponse.json(
-            { error: "Error creating opportunity" },
+            { error: "Failed to create opportunity" },
             { status: 500 }
         )
     }

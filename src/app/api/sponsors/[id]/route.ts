@@ -3,6 +3,7 @@ import { writeFile, unlink } from "fs/promises"
 import path from "path"
 import dbConnect from "@/lib/mongodb"
 import Sponsor from "@/models/Sponsor"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
 
 export async function GET(
     req: Request,
@@ -29,15 +30,38 @@ export async function GET(
 }
 
 export async function PUT(
-    req: Request,
+    request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         await dbConnect()
-        
-        const formData = await req.formData()
-        const sponsor = await Sponsor.findById(params.id)
-        
+        const formData = await request.formData()
+
+        const updateData: any = {
+            name: formData.get("name"),
+            description: formData.get("description"),
+            email: formData.get("email"),
+            phone: formData.get("phone"),
+            website: formData.get("website"),
+            sponsorshipLevel: formData.get("sponsorshipLevel"),
+            updatedAt: new Date(),
+        }
+
+        // Handle new logo if provided
+        const file = formData.get("logo") as File
+        if (file?.size > 0) {
+            const fileBuffer = Buffer.from(await file.arrayBuffer())
+            const fileName = `${Date.now()}-${file.name}`
+            const fileUrl = await uploadToGoogleDrive(fileBuffer, fileName)
+            updateData.logo = fileUrl
+        }
+
+        const sponsor = await Sponsor.findByIdAndUpdate(
+            params.id,
+            updateData,
+            { new: true }
+        )
+
         if (!sponsor) {
             return NextResponse.json(
                 { error: "Sponsor not found" },
@@ -45,50 +69,11 @@ export async function PUT(
             )
         }
 
-        // Handle new logo if provided
-        const file = formData.get("logo") as File
-        let logoPath = sponsor.logo // Keep existing logo by default
-
-        if (file) {
-            // Delete old logo
-            if (sponsor.logo) {
-                const oldPath = path.join(process.cwd(), "public", sponsor.logo)
-                try {
-                    await unlink(oldPath)
-                } catch (error) {
-                    console.error("Error deleting old logo:", error)
-                }
-            }
-
-            // Save new logo
-            const bytes = await file.arrayBuffer()
-            const buffer = Buffer.from(bytes)
-            const filename = `${Date.now()}-${file.name}`
-            const filepath = path.join(process.cwd(), "public/uploads", filename)
-            await writeFile(filepath, buffer)
-            logoPath = `/uploads/${filename}`
-        }
-
-        // Update sponsor
-        const updatedSponsor = await Sponsor.findByIdAndUpdate(
-            params.id,
-            {
-                name: formData.get("name"),
-                description: formData.get("description"),
-                email: formData.get("email"),
-                phone: formData.get("phone"),
-                website: formData.get("website"),
-                sponsorshipLevel: formData.get("sponsorshipLevel"),
-                logo: logoPath,
-            },
-            { new: true }
-        )
-
-        return NextResponse.json(updatedSponsor)
+        return NextResponse.json({ success: true, data: sponsor })
     } catch (error) {
         console.error("Error updating sponsor:", error)
         return NextResponse.json(
-            { error: "Error updating sponsor" },
+            { error: "Failed to update sponsor" },
             { status: 500 }
         )
     }

@@ -186,7 +186,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-[#111111] rounded-lg">
                         <div>
                             <p className="text-gray-400">Price</p>
-                            <p className="text-2xl font-bold text-white">${event.price}</p>
+                            <p className="text-2xl font-bold text-white">£{event.price}</p>
                         </div>
                         <div>
                             <p className="text-gray-400">Capacity</p>

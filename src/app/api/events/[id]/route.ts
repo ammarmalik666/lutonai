@@ -3,6 +3,7 @@ import { writeFile, unlink } from "fs/promises"
 import path from "path"
 import dbConnect from "@/lib/mongodb"
 import Event from "@/models/Event"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
 
 export async function GET(
     req: Request,
@@ -29,15 +30,47 @@ export async function GET(
 }
 
 export async function PUT(
-    req: Request,
+    request: Request,
     { params }: { params: { id: string } }
 ) {
     try {
         await dbConnect()
-        
-        const formData = await req.formData()
-        const event = await Event.findById(params.id)
-        
+        const formData = await request.formData()
+
+        const updateData: any = {
+            title: formData.get("title"),
+            description: formData.get("description"),
+            startDateTime: formData.get("startDateTime"),
+            endDateTime: formData.get("endDateTime"),
+            eventType: formData.get("eventType"),
+            venue: formData.get("venue"),
+            address: formData.get("address"),
+            city: formData.get("city"),
+            country: formData.get("country"),
+            organizers: formData.get("organizers"),
+            contactEmail: formData.get("contactEmail"),
+            contactPhone: formData.get("contactPhone"),
+            capacity: formData.get("capacity"),
+            price: formData.get("price"),
+            registrationDeadline: formData.get("registrationDeadline"),
+            updatedAt: new Date(),
+        }
+
+        // Handle new thumbnail if provided
+        const file = formData.get("thumbnail") as File
+        if (file?.size > 0) {
+            const fileBuffer = Buffer.from(await file.arrayBuffer())
+            const fileName = `${Date.now()}-${file.name}`
+            const fileUrl = await uploadToGoogleDrive(fileBuffer, fileName)
+            updateData.thumbnail = fileUrl
+        }
+
+        const event = await Event.findByIdAndUpdate(
+            params.id,
+            updateData,
+            { new: true }
+        )
+
         if (!event) {
             return NextResponse.json(
                 { error: "Event not found" },
@@ -45,59 +78,11 @@ export async function PUT(
             )
         }
 
-        // Handle new thumbnail if provided
-        const file = formData.get("thumbnail") as File
-        let thumbnailPath = event.thumbnail // Keep existing thumbnail by default
-
-        if (file) {
-            // Delete old thumbnail
-            if (event.thumbnail) {
-                const oldPath = path.join(process.cwd(), "public", event.thumbnail)
-                try {
-                    await unlink(oldPath)
-                } catch (error) {
-                    console.error("Error deleting old thumbnail:", error)
-                }
-            }
-
-            // Save new thumbnail
-            const bytes = await file.arrayBuffer()
-            const buffer = Buffer.from(bytes)
-            const filename = `${Date.now()}-${file.name}`
-            const filepath = path.join(process.cwd(), "public/uploads", filename)
-            await writeFile(filepath, buffer)
-            thumbnailPath = `/uploads/${filename}`
-        }
-
-        // Update event
-        const updatedEvent = await Event.findByIdAndUpdate(
-            params.id,
-            {
-                title: formData.get("title"),
-                description: formData.get("description"),
-                startDateTime: new Date(formData.get("startDateTime") as string),
-                endDateTime: new Date(formData.get("endDateTime") as string),
-                eventType: formData.get("eventType"),
-                venue: formData.get("venue"),
-                address: formData.get("address"),
-                city: formData.get("city"),
-                country: formData.get("country"),
-                organizers: formData.get("organizers"),
-                contactEmail: formData.get("contactEmail"),
-                contactPhone: formData.get("contactPhone"),
-                capacity: parseInt(formData.get("capacity") as string),
-                price: parseFloat(formData.get("price") as string),
-                registrationDeadline: new Date(formData.get("registrationDeadline") as string),
-                thumbnail: thumbnailPath,
-            },
-            { new: true }
-        )
-
-        return NextResponse.json(updatedEvent)
+        return NextResponse.json({ success: true, data: event })
     } catch (error) {
         console.error("Error updating event:", error)
         return NextResponse.json(
-            { error: "Error updating event" },
+            { error: "Failed to update event" },
             { status: 500 }
         )
     }

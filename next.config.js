@@ -46,7 +46,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'drive.google.com',
-        pathname: '/thumbnail**',
+        pathname: '/uc**',
       },
     ],
   },

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/mongodb"
 import Project from "@/models/Project"
-import { saveLocalFile } from "@/lib/uploadFile"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
 
 export async function GET() {
     try {
@@ -23,60 +23,56 @@ export async function GET() {
     }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
     try {
         await dbConnect()
-        
-        const formData = await req.formData()
-        const title = formData.get('title') as string
-        const description = formData.get('description') as string
-        const status = formData.get('status') as string
-        const thumbnailFile = formData.get('thumbnail') as File
+        const formData = await request.formData()
 
-        if (!title || !description || !status || !thumbnailFile) {
-            return NextResponse.json(
-                { success: false, error: "All fields are required" },
-                { status: 400 }
-            )
+        // Handle thumbnail upload
+        const thumbnailFile = formData.get("thumbnail") as File
+        if (!thumbnailFile) {
+            throw new Error("No thumbnail provided")
         }
 
-        // Save thumbnail locally
-        const thumbnailUrl = await saveLocalFile(thumbnailFile)
+        const thumbnailBuffer = Buffer.from(await thumbnailFile.arrayBuffer())
+        const thumbnailName = `${Date.now()}-${thumbnailFile.name}`
+        const thumbnailUrl = await uploadToGoogleDrive(thumbnailBuffer, thumbnailName)
 
-        // Process partners
+        // Handle partner logos
         const partners = []
-        let partnerIndex = 0
-        
-        while (formData.has(`partners[${partnerIndex}][name]`)) {
-            const name = formData.get(`partners[${partnerIndex}][name]`) as string
-            const logoFile = formData.get(`partners[${partnerIndex}][logo]`) as File
+        let index = 0
+        while (formData.get(`partners[${index}][name]`)) {
+            const partnerName = formData.get(`partners[${index}][name]`)
+            const partnerLogo = formData.get(`partners[${index}][logo]`) as File
 
-            if (!name || !logoFile) {
-                return NextResponse.json(
-                    { success: false, error: "Partner name and logo are required" },
-                    { status: 400 }
-                )
+            if (partnerLogo) {
+                const logoBuffer = Buffer.from(await partnerLogo.arrayBuffer())
+                const logoName = `${Date.now()}-${partnerLogo.name}`
+                const logoUrl = await uploadToGoogleDrive(logoBuffer, logoName)
+
+                partners.push({
+                    name: partnerName,
+                    logo: logoUrl
+                })
             }
-
-            const logoUrl = await saveLocalFile(logoFile)
-            partners.push({ name, logo: logoUrl })
-            partnerIndex++
+            index++
         }
 
-        // Create project with thumbnail
+        // Create project with the Google Drive URLs
         const project = await Project.create({
-            title,
+            title: formData.get("title"),
+            description: formData.get("description"),
+            status: formData.get("status"),
             thumbnail: thumbnailUrl,
-            description,
-            status,
-            partners
+            partners: partners,
+            createdAt: new Date(),
         })
 
-        return NextResponse.json({ success: true, project })
+        return NextResponse.json({ success: true, data: project })
     } catch (error) {
         console.error("Error creating project:", error)
         return NextResponse.json(
-            { success: false, error: "Failed to create project" },
+            { error: "Failed to create project" },
             { status: 500 }
         )
     }

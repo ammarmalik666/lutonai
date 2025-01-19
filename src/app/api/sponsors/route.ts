@@ -1,37 +1,24 @@
 import { NextResponse } from "next/server"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
 import dbConnect from "@/lib/mongodb"
 import Sponsor from "@/models/Sponsor"
+import { uploadToGoogleDrive } from '@/utils/googleDrive'
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
     try {
         await dbConnect()
+        const formData = await request.formData()
 
-        const formData = await req.formData()
-        
         // Handle logo upload
         const file = formData.get("logo") as File
         if (!file) {
             throw new Error("No logo provided")
         }
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), "public/uploads")
-        try {
-            await writeFile(path.join(uploadsDir, "test.txt"), "")
-        } catch (error) {
-            await mkdir(uploadsDir, { recursive: true })
-        }
+        const fileBuffer = Buffer.from(await file.arrayBuffer())
+        const fileName = `${Date.now()}-${file.name}`
+        const fileUrl = await uploadToGoogleDrive(fileBuffer, fileName)
 
-        // Save logo
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        const filename = `${Date.now()}-${file.name}`
-        const filepath = path.join(uploadsDir, filename)
-        await writeFile(filepath, buffer)
-
-        // Create sponsor with logo URL
+        // Create sponsor with the Google Drive URL
         const sponsor = await Sponsor.create({
             name: formData.get("name"),
             description: formData.get("description"),
@@ -39,15 +26,15 @@ export async function POST(req: Request) {
             phone: formData.get("phone"),
             website: formData.get("website"),
             sponsorshipLevel: formData.get("sponsorshipLevel"),
-            logo: `/uploads/${filename}`,
+            logo: fileUrl,  // Save the Google Drive URL
             createdAt: new Date(),
         })
 
-        return NextResponse.json(sponsor, { status: 201 })
+        return NextResponse.json({ success: true, data: sponsor })
     } catch (error) {
         console.error("Error creating sponsor:", error)
         return NextResponse.json(
-            { error: "Error creating sponsor" },
+            { error: "Failed to create sponsor" },
             { status: 500 }
         )
     }

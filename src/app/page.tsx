@@ -176,8 +176,8 @@ export default function HomePage() {
               className="text-center"
               variants={scaleIn}
             >
-              <h3 className="text-4xl font-bold">100+</h3>
-              <p className="mt-2 text-white/80">Workshops Held</p>
+              <h3 className="text-4xl font-bold">5+</h3>
+              <p className="mt-2 text-white/80">Events Held</p>
             </motion.div>
             <motion.div
               className="text-center"

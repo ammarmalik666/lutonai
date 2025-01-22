@@ -65,7 +65,7 @@ export default async function ProjectsPage() {
                                         {project.title}
                                     </h2>
                                     <p className="mt-2 line-clamp-2 text-gray-600">
-                                        {project.description}
+                                        {project.description.replace(/<[^>]*>/g, '')}
                                     </p>
                                 </div>
                             </Link>

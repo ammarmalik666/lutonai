@@ -14,6 +14,8 @@ const navigation = [
   { name: "Sponsorships", href: "/sponsorships" },
   { name: "Projects", href: "/projects" },
   { name: "Opportunities", href: "/opportunities" },
+  { name: "AI Courses", href: "https://www.beds.ac.uk/courses/artificial-intelligence/" },
+  { name: "AI Driving Licence course", href: "/ai-driving-licence-course" },
 ]
 
 export function SiteHeader() {
@@ -47,6 +49,8 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
+              target={item.href.startsWith('http') ? '_blank' : undefined}
+              rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
               className={`text-sm font-medium transition-colors hover:text-[#C8102E] ${
                 pathname === item.href
                   ? "text-[#C8102E]"
@@ -79,6 +83,8 @@ export function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
+                target={item.href.startsWith('http') ? '_blank' : undefined}
+                rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                 onClick={() => setIsMenuOpen(false)}
                 className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
                   pathname === item.href

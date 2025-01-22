@@ -8,7 +8,7 @@ const team = [
   {
     name: "Dr. Edward Braund",
     role: "Head of School",
-    bio: "Leading a team of passionate educators and researchers.",
+    bio: "Designs new intelligences and leads a dedicated team of researchers and educators",
     image: "/images/Ed.png",
   },
   {

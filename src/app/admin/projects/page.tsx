@@ -79,6 +79,13 @@ export default function ProjectsPage() {
         }
     }
 
+    // Function to strip HTML tags
+    const stripHtmlTags = (html: string) => {
+        const tmp = document.createElement('div')
+        tmp.innerHTML = html
+        return tmp.textContent || tmp.innerText || ''
+    }
+
     if (isLoading) return <div>Loading...</div>
     if (error) return <div>{error}</div>
 
@@ -115,7 +122,7 @@ export default function ProjectsPage() {
                             <CardHeader className="p-4">
                                 <CardTitle className="text-lg line-clamp-1">{project.title}</CardTitle>
                                 <CardDescription className="text-gray-400 line-clamp-2">
-                                    {project.description}
+                                    {stripHtmlTags(project.description)}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-4 pt-0">

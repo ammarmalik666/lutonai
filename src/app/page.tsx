@@ -169,7 +169,7 @@ export default function HomePage() {
               className="text-center"
               variants={scaleIn}
             >
-              <h3 className="text-4xl font-bold">50+</h3>
+              <h3 className="text-4xl font-bold">20+</h3>
               <p className="mt-2 text-white/80">AI Projects</p>
             </motion.div>
             <motion.div
@@ -183,7 +183,7 @@ export default function HomePage() {
               className="text-center"
               variants={scaleIn}
             >
-              <h3 className="text-4xl font-bold">20+</h3>
+              <h3 className="text-4xl font-bold">10+</h3>
               <p className="mt-2 text-white/80">Partner Organizations</p>
             </motion.div>
           </motion.div>
@@ -514,6 +514,12 @@ export default function HomePage() {
                   comment: "The AI Club is an excellent platform is a beacon of innovation and collaboration, consistently fostering a vibrant community for AI enthusiasts and professionals alike. The club's emphasis on teamwork, mentorship, and inclusivity ensures that every participant, regardless of their background, feels empowered to contribute and grow."
                 },
                 {
+                  name: "Massoud",
+                  position: "Lecturer, University of Bedfordshire",
+                  image: "/images/massoud.png",
+                  comment: "The AI Club could be a platform for small and medium-sized enterprises (SMEs) to empower their capabilities through AI and data science. With support from experts at the University of Bedfordshire, SMEs could explore ways to adopt digital technologies, making it possible to improve productivity, streamline operations, and enhance their competitiveness in a rapidly evolving market."
+                },
+                {
                   name: "Nika",
                   position: "President, BCS Student Chapter",
                   image: "/nika.png",
@@ -580,18 +586,18 @@ export default function HomePage() {
               className="text-gradient text-3xl font-bold tracking-tight sm:text-4xl"
               variants={fadeIn}
             >
-              Our Sponsors
+              Organisations We've Worked With
             </motion.h2>
             <motion.p
               className="mt-6 text-lg leading-8 text-muted-foreground"
               variants={fadeIn}
             >
-              Partnering with leading organizations to advance AI innovation in Luton.
+              Our team worked with leading organisations in the UK.
             </motion.p>
           </motion.div>
 
           <motion.div
-            className="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5"
+            className="mx-auto mt-16 flex max-w-5xl flex-wrap justify-center gap-6"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -599,35 +605,45 @@ export default function HomePage() {
           >
             {[
               {
-                name: "University of Bedfordshire",
-                logo: "/sponsors/uob.svg",
-                link: "https://www.beds.ac.uk"
-              },
-              {
-                name: "Luton Borough Council",
-                logo: "/sponsors/luton-council.svg",
-                link: "https://www.luton.gov.uk"
-              },
-              {
-                name: "Luton Town FC",
-                logo: "/sponsors/luton-town.svg",
-                link: "https://www.lutontown.co.uk/en"
-              },
-              {
-                name: "Luton Point",
-                logo: "/sponsors/mall-luton.svg",
-                link: "https://www.themall.co.uk/luton"
+                name: "National Health Service (NHS)",
+                logo: "/sponsors/nhs.jpeg",
+                link: "https://www.nhs.uk"
               },
               {
                 name: "Switchshop",
                 logo: "/sponsors/switch-shop.svg",
                 link: "https://switchshop.co.uk/"
+              },
+              {
+                name: "BCS Educational Affiliate",
+                logo: "/sponsors/bcs.jpeg",
+                link: "https://www.bcs.org/"
+              },
+              {
+                name: "The Alan Turing Institute",
+                logo: "/sponsors/alan-turing.jpeg",
+                link: "https://www.turing.ac.uk/"
+              },
+              {
+                name: "NVIDIA",
+                logo: "/sponsors/nvidia.jpeg",
+                link: "https://www.nvidia.com/"
+              },
+              {
+                name: "MONAI",
+                logo: "/sponsors/monai.jpeg",
+                link: "https://monai.io/"
+              },
+              {
+                name: "London AI Centre for Value based Healthcare",
+                logo: "/sponsors/ai-centre.jpeg",
+                link: "https://www.aicentre.co.uk/"
               }
             ].map((sponsor) => (
               <motion.div
                 key={sponsor.name}
                 variants={fadeIn}
-                className="group relative flex aspect-square"
+                className="group relative flex aspect-square w-full max-w-[200px]"
               >
                 <motion.a
                   href={sponsor.link}
@@ -652,19 +668,6 @@ export default function HomePage() {
                 </motion.a>
               </motion.div>
             ))}
-          </motion.div>
-
-          <motion.div
-            className="mt-16 text-center"
-            variants={fadeIn}
-          >
-            <Button
-              asChild
-              size="lg"
-              className="bg-gradient-to-r from-[#C8102E] to-[#BD0029] hover:bg-gradient-to-r hover:from-[#BD0029] hover:to-[#C8102E] transition-all duration-300 hover-lift"
-            >
-              <Link href="/sponsors">View All Sponsors</Link>
-            </Button>
           </motion.div>
         </div>
       </section>

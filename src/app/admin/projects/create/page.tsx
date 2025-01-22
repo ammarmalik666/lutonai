@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { Editor } from '@tinymce/tinymce-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import {
     Select,
     SelectContent,
@@ -147,9 +147,10 @@ export default function CreateProjectPage() {
             if (!response.ok) {
                 throw new Error(data.error || "Failed to create project")
             }
-
-            router.push("/admin/projects")
-            router.refresh()
+            console.log("data")
+            console.log(data)
+            // router.push("/admin/projects")
+            // router.refresh()
         } catch (error) {
             console.error("Error:", error)
             setError(error instanceof Error ? error.message : "Failed to create project")
@@ -233,13 +234,27 @@ export default function CreateProjectPage() {
                             <label className="text-sm font-medium text-gray-200">
                                 Description
                             </label>
-                            <Textarea
-                                required
-                                maxLength={2000}
+                            <Editor
+                                apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                placeholder="Enter project description"
-                                className="min-h-[150px] bg-[#0F1629] border-gray-800 text-white placeholder:text-gray-400"
+                                onEditorChange={(content) => {
+                                    setFormData({ ...formData, description: content })
+                                }}
+                                init={{
+                                    height: 400,
+                                    menubar: false,
+                                    plugins: [
+                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                                    ],
+                                    toolbar: 'undo redo | blocks | ' +
+                                        'bold italic forecolor | alignleft aligncenter ' +
+                                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                                        'removeformat | help',
+                                    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+                                    skin: "oxide",
+                                }}
                             />
                         </div>
 

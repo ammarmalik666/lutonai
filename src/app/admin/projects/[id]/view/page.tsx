@@ -91,8 +91,21 @@ export default function ViewProjectPage() {
                 <CardContent className="p-6 pt-0">
                     <div className="space-y-6">
                         <div>
-                            <h3 className="text-lg font-semibold mb-2">Description</h3>
-                            <p className="text-gray-400">{project.description}</p>
+                            <h3 className="text-lg font-semibold mb-4">Description</h3>
+                            <div 
+                                className="prose prose-invert max-w-none
+                                    prose-h1:text-2xl prose-h1:font-bold prose-h1:mb-4 prose-h1:mt-6
+                                    prose-h2:text-xl prose-h2:font-semibold prose-h2:mb-3 prose-h2:mt-5
+                                    prose-h3:text-lg prose-h3:font-medium prose-h3:mb-3 prose-h3:mt-4
+                                    prose-p:text-gray-400 prose-p:mb-4
+                                    prose-ul:text-gray-400 prose-ul:mb-4 prose-ul:list-disc
+                                    prose-ol:text-gray-400 prose-ol:mb-4 prose-ol:list-decimal
+                                    prose-li:mb-1
+                                    prose-strong:text-white
+                                    prose-blockquote:border-l-4 prose-blockquote:border-gray-700 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-400
+                                    prose-a:text-blue-400 prose-a:hover:text-blue-300"
+                                dangerouslySetInnerHTML={{ __html: project.description }}
+                            />
                         </div>
 
                         <div>

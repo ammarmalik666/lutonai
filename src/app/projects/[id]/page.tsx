@@ -116,9 +116,20 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                         {/* Main Content */}
                         <div className="lg:col-span-2">
                             <h2 className="mb-4 text-2xl font-bold">About This Project</h2>
-                            <div className="prose prose-lg max-w-none">
-                                {project.description}
-                            </div>
+                            <div 
+                                className="prose max-w-none
+                                    prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-4
+                                    prose-h2:text-2xl prose-h2:font-bold prose-h2:mb-3
+                                    prose-h3:text-xl prose-h3:font-semibold prose-h3:mb-3
+                                    prose-p:text-gray-600 prose-p:leading-relaxed prose-p:mb-4
+                                    prose-ul:list-disc prose-ul:text-gray-600 prose-ul:mb-4 prose-ul:pl-4
+                                    prose-ol:list-decimal prose-ol:text-gray-600 prose-ol:mb-4 prose-ol:pl-4
+                                    prose-li:text-gray-600 prose-li:mb-1
+                                    prose-strong:text-gray-900 prose-strong:font-semibold
+                                    prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-600
+                                    prose-a:text-[#C8102E] prose-a:font-medium hover:prose-a:text-[#A00D25]"
+                                dangerouslySetInnerHTML={{ __html: project.description }}
+                            />
                         </div>
 
                         {/* Sidebar */}
@@ -128,7 +139,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                                 <h3 className="mb-4 text-lg font-semibold">Project Details</h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <div className="text-sm font-medium text-gray-500">Created On</div>
+                                        <div className="text-sm font-medium text-gray-500">Date</div>
                                         <div>{formatDate(project.createdAt)}</div>
                                     </div>
                                     <div>

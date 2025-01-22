@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Image from "next/image"
 import { motion } from "framer-motion"
+import { Editor } from '@tinymce/tinymce-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import {
     Select,
     SelectContent,
@@ -131,16 +131,17 @@ export default function EditProjectPage() {
             
             if (formData.thumbnail instanceof File) {
                 formDataToSend.append("thumbnail", formData.thumbnail)
-            } else {
-                formDataToSend.append("thumbnailUrl", formData.thumbnail as string)
+            } else if (typeof formData.thumbnail === 'string') {
+                formDataToSend.append("thumbnailUrl", formData.thumbnail)
             }
 
             formData.partners.forEach((partner, index) => {
                 formDataToSend.append(`partners[${index}][name]`, partner.name)
+                
                 if (partner.logo instanceof File) {
                     formDataToSend.append(`partners[${index}][logo]`, partner.logo)
-                } else {
-                    formDataToSend.append(`partners[${index}][logoUrl]`, partner.logo as string)
+                } else if (typeof partner.logo === 'string') {
+                    formDataToSend.append(`partners[${index}][logoUrl]`, partner.logo)
                 }
             })
 
@@ -153,7 +154,8 @@ export default function EditProjectPage() {
                 const data = await response.json()
                 throw new Error(data.error || "Failed to update project")
             }
-
+            // console.log("response")
+            // console.log(response.json())
             router.push("/admin/projects")
             router.refresh()
         } catch (error) {
@@ -164,7 +166,7 @@ export default function EditProjectPage() {
     }
 
     return (
-        <div className="container max-w-3xl py-6">
+        <div className="container max-w-3xl py-6 overflow-hidden">
             <Card className="bg-[#020817] text-white border-none">
                 <CardHeader className="pb-4">
                     <CardTitle>Edit Project</CardTitle>
@@ -172,7 +174,7 @@ export default function EditProjectPage() {
                         Update your project details and partners.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="overflow-hidden">
                     {error && (
                         <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-500">
                             {error}
@@ -234,11 +236,28 @@ export default function EditProjectPage() {
                             <label className="text-sm font-medium text-gray-200">
                                 Description
                             </label>
-                            <Textarea
-                                required
+                            <Editor
+                                apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="min-h-[150px] bg-[#0F1629] border-gray-800 text-white placeholder:text-gray-400"
+                                onEditorChange={(content) => {
+                                    setFormData({ ...formData, description: content })
+                                }}
+                                init={{
+                                    height: 400,
+                                    menubar: false,
+                                    plugins: [
+                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                                    ],
+                                    toolbar: 'undo redo | blocks | ' +
+                                        'bold italic forecolor | alignleft aligncenter ' +
+                                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                                        'removeformat | help',
+                                    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+                                    skin: "oxide",
+                                    toolbar_mode: 'sliding'
+                                }}
                             />
                         </div>
 
@@ -369,6 +388,11 @@ export default function EditProjectPage() {
                     </form>
                 </CardContent>
             </Card>
+            <style jsx global>{`
+                body {
+                    overflow: hidden;
+                }
+            `}</style>
         </div>
     )
 } 

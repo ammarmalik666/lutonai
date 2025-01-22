@@ -32,49 +32,55 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        await dbConnect()
+        // await dbConnect()
         const formData = await request.formData()
 
         const updateData: any = {
             title: formData.get("title"),
             description: formData.get("description"),
             status: formData.get("status"),
-            updatedAt: new Date(),
         }
 
-        // Handle new thumbnail if provided
-        const thumbnailFile = formData.get("thumbnail") as File
-        if (thumbnailFile?.size > 0) {
-            const thumbnailBuffer = Buffer.from(await thumbnailFile.arrayBuffer())
-            const thumbnailName = `${Date.now()}-${thumbnailFile.name}`
-            const thumbnailUrl = await uploadToGoogleDrive(thumbnailBuffer, thumbnailName)
+        // Handle thumbnail
+        const thumbnail = formData.get("thumbnail") as File | null
+        const thumbnailUrl = formData.get("thumbnailUrl")
+        
+        if (thumbnail instanceof File) {
+            const buffer = Buffer.from(await thumbnail.arrayBuffer())
+            const uploadedThumbnailUrl = await uploadToGoogleDrive(buffer, thumbnail.name)
+            updateData.thumbnail = uploadedThumbnailUrl
+        } else if (thumbnailUrl) {
             updateData.thumbnail = thumbnailUrl
         }
 
-        // Handle partner updates
-        const partners = []
+        // Handle partners
+        const partners: any[] = []
         let index = 0
-        while (formData.get(`partners[${index}][name]`)) {
+        
+        while (formData.has(`partners[${index}][name]`)) {
             const partnerName = formData.get(`partners[${index}][name]`)
-            const partnerLogo = formData.get(`partners[${index}][logo]`) as File
-            const existingLogoUrl = formData.get(`partners[${index}][existingLogo]`)
+            const partnerLogo = formData.get(`partners[${index}][logo]`) as File | null
+            const partnerLogoUrl = formData.get(`partners[${index}][logoUrl]`)
+            
+            let logoUrl = partnerLogoUrl
 
-            let logoUrl = existingLogoUrl
-
-            if (partnerLogo?.size > 0) {
-                const logoBuffer = Buffer.from(await partnerLogo.arrayBuffer())
-                const logoName = `${Date.now()}-${partnerLogo.name}`
-                logoUrl = await uploadToGoogleDrive(logoBuffer, logoName)
+            if (partnerLogo instanceof File) {
+                const buffer = Buffer.from(await partnerLogo.arrayBuffer())
+                logoUrl = await uploadToGoogleDrive(buffer, partnerLogo.name)
             }
 
             partners.push({
                 name: partnerName,
                 logo: logoUrl
             })
+            
             index++
         }
 
         updateData.partners = partners
+
+        // await dbConnect()
+        // return NextResponse.json({ success: true, data:updateData })
 
         const project = await Project.findByIdAndUpdate(
             params.id,
@@ -89,7 +95,7 @@ export async function PUT(
             )
         }
 
-        return NextResponse.json({ success: true, data: project })
+        return NextResponse.json({ success: true, project })
     } catch (error) {
         console.error("Error updating project:", error)
         return NextResponse.json(

@@ -630,14 +630,19 @@ export default function HomePage() {
                 link: "https://www.nvidia.com/"
               },
               {
-                name: "MONAI",
-                logo: "/sponsors/monai.jpeg",
-                link: "https://monai.io/"
-              },
-              {
                 name: "London AI Centre for Value based Healthcare",
                 logo: "/sponsors/ai-centre.jpeg",
                 link: "https://www.aicentre.co.uk/"
+              },
+              {
+                name: "TAFU",
+                logo: "/sponsors/tafu.jpeg",
+                link: "https://teensandfriendsunited.org/"
+              },
+              {
+                name: "Bedfordshire Chamber of Commerce",
+                logo: "/sponsors/bcc.jpeg",
+                link: "https://www.chamber-business.com/"
               }
             ].map((sponsor) => (
               <motion.div

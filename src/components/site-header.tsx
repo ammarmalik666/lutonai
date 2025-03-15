@@ -16,6 +16,7 @@ const navigation = [
   { name: "Opportunities", href: "/opportunities" },
   { name: "AI Courses", href: "https://www.beds.ac.uk/courses/artificial-intelligence/" },
   { name: "AI Driving Licence course", href: "/ai-driving-licence-course" },
+  { name: "Register Now", href: "/register" },
 ]
 
 export function SiteHeader() {

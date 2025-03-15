@@ -175,7 +175,7 @@ export default function RegisterPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="organization">Organization (Optional)</Label>
+                  <Label htmlFor="organization">Organization</Label>
                   <Input
                     id="organization"
                     placeholder="Company or Institution"
@@ -187,7 +187,7 @@ export default function RegisterPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="areaOfInterest">Areas of Interest (Optional)</Label>
+                  <Label htmlFor="areaOfInterest">Areas of Interest</Label>
                   <Input
                     id="areaOfInterest"
                     placeholder="AI, Machine Learning, Data Science"

@@ -10,6 +10,7 @@ import {
     FolderIcon,
     BriefcaseIcon,
 } from "@heroicons/react/24/outline"
+import { UserPlus } from "lucide-react"
 
 const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: HomeIcon },
@@ -18,6 +19,7 @@ const navigation = [
     { name: "Sponsors", href: "/admin/sponsors", icon: UserGroupIcon },
     { name: "Projects", href: "/admin/projects", icon: FolderIcon },
     { name: "Opportunities", href: "/admin/opportunities", icon: BriefcaseIcon },
+    { name: "Registrations", href: "/admin/registrations", icon: UserPlus },
 ]
 
 export default function Sidebar() {

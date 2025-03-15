@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Toaster } from "sonner"
+import { Toaster } from "@/components/ui/toaster"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 
@@ -27,7 +27,7 @@ export default function RootLayout({
                         </main>
                         <SiteFooter />
                     </div>
-                    <Toaster position="top-center" richColors />
+                    <Toaster />
             </body>
         </html>
     )

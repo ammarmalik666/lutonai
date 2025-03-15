@@ -5,8 +5,92 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { fadeIn, staggerContainer } from "@/lib/animations"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { useState } from "react"
+import { useToast } from "@/components/ui/use-toast"
+
+// Form validation schema
+const registerSchema = z.object({
+  firstName: z.string()
+    .min(3, "First name must be at least 3 characters")
+    .max(20, "First name must not exceed 20 characters"),
+  lastName: z.string()
+    .min(3, "Last name must be at least 3 characters")
+    .max(20, "Last name must not exceed 20 characters"),
+  email: z.string()
+    .email("Please enter a valid email address"),
+  organization: z.string()
+    .min(3, "Organization must be at least 3 characters")
+    .max(50, "Organization must not exceed 50 characters")
+    .optional()
+    .or(z.literal("")),
+  areaOfInterest: z.string()
+    .min(3, "Area of interest must be at least 3 characters")
+    .max(150, "Area of interest must not exceed 150 characters")
+    .optional()
+    .or(z.literal("")),
+})
+
+type RegisterFormData = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast()
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema)
+  })
+
+  const onSubmit = async (data: RegisterFormData) => {
+    setIsSubmitting(true)
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          toast({
+            title: "Registration Failed",
+            description: "This email is already registered",
+            variant: "destructive",
+          })
+          return
+        }
+        throw new Error(result.error || 'Something went wrong')
+      }
+
+      toast({
+        title: "Registration Successful",
+        description: "Thank you for registering with us!",
+        variant: "default",
+      })
+
+      reset() // Clear form
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <>
       {/* Hero Section */}
@@ -48,7 +132,7 @@ export default function RegisterPage() {
             <motion.form
               className="space-y-8 rounded-xl bg-white p-8 shadow-lg ring-1 ring-[#000000]/10 dark:bg-[#000000] dark:ring-[#C8102E]/10"
               variants={fadeIn}
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={handleSubmit(onSubmit)}
             >
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -57,16 +141,24 @@ export default function RegisterPage() {
                     <Input
                       id="firstName"
                       placeholder="John"
-                      className="focus-visible:ring-[#C8102E]"
+                      className={`focus-visible:ring-[#C8102E] ${errors.firstName ? 'border-red-500' : ''}`}
+                      {...register("firstName")}
                     />
+                    {errors.firstName && (
+                      <p className="text-sm text-red-500">{errors.firstName.message}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
                       placeholder="Doe"
-                      className="focus-visible:ring-[#C8102E]"
+                      className={`focus-visible:ring-[#C8102E] ${errors.lastName ? 'border-red-500' : ''}`}
+                      {...register("lastName")}
                     />
+                    {errors.lastName && (
+                      <p className="text-sm text-red-500">{errors.lastName.message}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -75,24 +167,36 @@ export default function RegisterPage() {
                     id="email"
                     type="email"
                     placeholder="john@example.com"
-                    className="focus-visible:ring-[#C8102E]"
+                    className={`focus-visible:ring-[#C8102E] ${errors.email ? 'border-red-500' : ''}`}
+                    {...register("email")}
                   />
+                  {errors.email && (
+                    <p className="text-sm text-red-500">{errors.email.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="organization">Organization</Label>
+                  <Label htmlFor="organization">Organization (Optional)</Label>
                   <Input
                     id="organization"
                     placeholder="Company or Institution"
-                    className="focus-visible:ring-[#C8102E]"
+                    className={`focus-visible:ring-[#C8102E] ${errors.organization ? 'border-red-500' : ''}`}
+                    {...register("organization")}
                   />
+                  {errors.organization && (
+                    <p className="text-sm text-red-500">{errors.organization.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="interests">Areas of Interest</Label>
+                  <Label htmlFor="areaOfInterest">Areas of Interest (Optional)</Label>
                   <Input
-                    id="interests"
+                    id="areaOfInterest"
                     placeholder="AI, Machine Learning, Data Science"
-                    className="focus-visible:ring-[#C8102E]"
+                    className={`focus-visible:ring-[#C8102E] ${errors.areaOfInterest ? 'border-red-500' : ''}`}
+                    {...register("areaOfInterest")}
                   />
+                  {errors.areaOfInterest && (
+                    <p className="text-sm text-red-500">{errors.areaOfInterest.message}</p>
+                  )}
                 </div>
               </div>
               <motion.div
@@ -103,8 +207,9 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   className="w-full bg-[#C8102E] text-white hover:bg-[#BD0029]"
+                  disabled={isSubmitting}
                 >
-                  Register Now
+                  {isSubmitting ? "Registering..." : "Register Now"}
                 </Button>
               </motion.div>
             </motion.form>

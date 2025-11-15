@@ -87,7 +87,7 @@ const team = [
     name: "Yanran Li",
     role: "Lecturer",
     bio: "Expert in AI ads creations, Generative AI, Video and motion generations.",
-    image: "/images/yanran.png",
+    image: "/images/Yanran.png",
   },
   {
     name: "Prof. Enjie Liu",

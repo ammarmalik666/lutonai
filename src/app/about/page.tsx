@@ -77,6 +77,36 @@ const team = [
     bio: "Focusing on Information Retrieval and Natural Language Processing.",
     image: "/images/mahmoud.png",
   },
+  {
+    name: "Asad Ullah",
+    role: "Senior Lecturer",
+    bio: "Expert in AI agents, automation workflows, and intelligent system design.",
+    image: "/images/asad.png",
+  },
+  {
+    name: "Yanran Li",
+    role: "Lecturer",
+    bio: "Expert in AI ads creations, Generative AI, Video and motion generations.",
+    image: "/images/yanran.png",
+  },
+  {
+    name: "Prof. Enjie Liu",
+    role: "Associate Professor",
+    bio: "Expert in transparency in multimodal AI reasoning and the use of LLMs in various applications.",
+    image: "/images/Enjie.png",
+  },
+  {
+    name: "Mary Ferguson",
+    role: "Lecturer",
+    bio: "Tutor, Broadcast and Digital Media",
+    image: "/images/Mary.png",
+  },
+  {
+    name: "David Pike",
+    role: "Lecturer",
+    bio: "Expert in Application of AI to educational and learning contexts.",
+    image: "/images/david.png",
+  },
 ]
 
 export default function AboutPage() {

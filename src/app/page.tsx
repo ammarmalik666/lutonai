@@ -292,7 +292,7 @@ export default function HomePage() {
             </motion.p>
           </motion.div>
           <motion.div
-            className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4"
+            className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}

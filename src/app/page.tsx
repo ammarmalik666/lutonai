@@ -169,14 +169,14 @@ export default function HomePage() {
               className="text-center"
               variants={scaleIn}
             >
-              <h3 className="text-4xl font-bold">20+</h3>
+              <h3 className="text-4xl font-bold">50+</h3>
               <p className="mt-2 text-white/80">AI Projects</p>
             </motion.div>
             <motion.div
               className="text-center"
               variants={scaleIn}
             >
-              <h3 className="text-4xl font-bold">5+</h3>
+              <h3 className="text-4xl font-bold">30+</h3>
               <p className="mt-2 text-white/80">Events Held</p>
             </motion.div>
             <motion.div
@@ -527,7 +527,7 @@ export default function HomePage() {
                 }
               ].map((testimonial, index) => (
                 <SwiperSlide key={index} className="!height-auto">
-                  <motion.div 
+                  <motion.div
                     className="rounded-2xl bg-gradient-to-br from-[#C8102E] to-[#BD0029] p-8 shadow-xl h-auto"
                     whileHover={{ y: -5 }}
                     transition={{ type: "spring", stiffness: 300 }}

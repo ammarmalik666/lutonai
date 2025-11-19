@@ -107,6 +107,18 @@ const team = [
     bio: "Expert in Application of AI to educational and learning contexts.",
     image: "/images/david.png",
   },
+  {
+    name: "Giles Robertson",
+    role: "Course Leader - Marketing",
+    bio: "Using AI in marketing automation and supporting sustainability.",
+    image: "/images/giles.png",
+  },
+  {
+    name: "Dr. Ioana S. Stoica",
+    role: "Senior Lecturer in Digital Marketing",
+    bio: "Leveraging AI marketing to help brands strengthen their online identity and voice.",
+    image: "/images/ioana.png",
+  },
 ]
 
 export default function AboutPage() {
@@ -133,6 +145,7 @@ export default function AboutPage() {
               variants={fadeIn}
             >
               Discover our mission to advance AI innovation and education in Luton.
+
             </motion.p>
           </motion.div>
         </div>
@@ -158,7 +171,7 @@ export default function AboutPage() {
               className="mb-16 text-lg leading-8 text-[#000000]/60"
               variants={fadeIn}
             >
-              We are dedicated to advancing AI technology while ensuring its responsible and ethical development.
+              As part of our civic agreement, <b>we have established Luton AI</b>, a civic organisation run out of UoB and that leverages the its strong record in AI and automation.
             </motion.p>
           </motion.div>
           <motion.div
@@ -175,7 +188,10 @@ export default function AboutPage() {
             >
               <h3 className="mb-3 text-xl font-semibold text-[#C8102E]">Innovation</h3>
               <p className="text-[#000000]/60">
-                Pushing the boundaries of AI technology through cutting-edge research and development.
+                Luton AI is designed to <b>build an AI ecosystem that drives business and technology innovation</b>,
+                creates high-skilled jobs in the region, fosters a collaborative network of AI adopters,
+                and provides a broad spectrum of AI training, skills, and security development programmes,
+                strengthening the UK’s position as a leader in AI.
               </p>
             </motion.div>
             <motion.div
@@ -185,7 +201,9 @@ export default function AboutPage() {
             >
               <h3 className="mb-3 text-xl font-semibold text-[#C8102E]">Education</h3>
               <p className="text-[#000000]/60">
-                Providing comprehensive AI education and training to students and professionals.
+                <b>Luton AI has engaged with over 300 regional and national organisations</b>, spanning a range
+                of sectors from healthcare, manufacturing, and financial services, to software development
+                and the creative and cultural industries.
               </p>
             </motion.div>
             <motion.div
@@ -195,7 +213,9 @@ export default function AboutPage() {
             >
               <h3 className="mb-3 text-xl font-semibold text-[#C8102E]">Impact</h3>
               <p className="text-[#000000]/60">
-                Creating positive change in our community through AI applications.
+                Luton AI has run further bespoke consultancy and R&I projects with +30 of these organisations to support
+                them in the accelerated AI transformation of their operations, products, and services,
+                supporting the local economy and the productivity of its workforce.
               </p>
             </motion.div>
           </motion.div>
@@ -207,7 +227,7 @@ export default function AboutPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#C8102E] to-[#BD0029] mix-blend-overlay opacity-50" />
         <div className="container relative">
           <motion.div
-            className="mx-auto max-w-2xl text-center"
+            className="mx-auto max-w-5xl"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -217,7 +237,7 @@ export default function AboutPage() {
               className="mb-6 text-3xl font-bold tracking-tight sm:text-4xl"
               variants={fadeIn}
             >
-              Our Values
+              Our Priorities
             </motion.h2>
             <motion.div
               className="mt-10 grid gap-8 sm:grid-cols-2"
@@ -227,37 +247,53 @@ export default function AboutPage() {
                 className="rounded-lg bg-white/10 p-6 backdrop-blur-sm"
                 variants={fadeIn}
               >
-                <h3 className="mb-3 text-xl font-semibold">Excellence</h3>
+                <h3 className="mb-3 text-xl font-semibold">Platforming our work nationally</h3>
                 <p className="text-white/80">
-                  Striving for the highest standards in research and education.
+                  Championing local, Luton and Bedfordshire-based AI success stories.
+                </p>
+                <p className="text-white/80">
+                  Becoming part of the national conversation on AI adoption and policy.
                 </p>
               </motion.div>
               <motion.div
                 className="rounded-lg bg-white/10 p-6 backdrop-blur-sm"
                 variants={fadeIn}
               >
-                <h3 className="mb-3 text-xl font-semibold">Ethics</h3>
+                <h3 className="mb-3 text-xl font-semibold">Building an AI skills pipeline</h3>
                 <p className="text-white/80">
-                  Ensuring responsible and ethical AI development.
+                  Creating a wide range of AI skills development programmes.
+                </p>
+                <p className="text-white/80">
+                  Collaborating with schools and industry to develop innovative training programs that bridge the skills gap.
                 </p>
               </motion.div>
               <motion.div
                 className="rounded-lg bg-white/10 p-6 backdrop-blur-sm"
                 variants={fadeIn}
               >
-                <h3 className="mb-3 text-xl font-semibold">Innovation</h3>
+                <h3 className="mb-3 text-xl font-semibold">Funding and resources for the region's AI journey </h3>
                 <p className="text-white/80">
-                  Embracing new ideas and pushing technological boundaries.
+                  Working with the region’s local authorities to apply to become an AIGZ.
+                </p>
+                <p className="text-white/80">
+                  Gain public and private funding to support the region, and broader UK, in its AI transformation.
                 </p>
               </motion.div>
               <motion.div
                 className="rounded-lg bg-white/10 p-6 backdrop-blur-sm"
                 variants={fadeIn}
               >
-                <h3 className="mb-3 text-xl font-semibold">Community</h3>
+                <h3 className="mb-3 text-xl font-semibold">Creating an AI innovation hub in Luton</h3>
                 <p className="text-white/80">
-                  Building strong relationships and fostering collaboration.
+                  Building our portfolio of collaborative R&D projects in collaboration with industry partners.
                 </p>
+                <p className="text-white/80">
+                  Creating a local, skilled AI job market.
+                </p>
+                <p className="text-white/80">
+                  Making Luton a destination for AI companies, building the local economy
+                </p>
+
               </motion.div>
             </motion.div>
           </motion.div>

@@ -18,7 +18,7 @@ const createEventSchema = z.object({
             "Thumbnail must be less than 2MB"
         )
         .refine(
-            (files) => 
+            (files) =>
                 ["image/jpeg", "image/jpg", "image/png"].includes(files?.[0]?.type),
             "Only .jpg, .jpeg, and .png files are allowed"
         ),
@@ -98,8 +98,8 @@ export default function CreateEvent() {
 
             if (!response.ok) throw new Error("Failed to create event")
             console.log(response)
-            // toast.success("Event created successfully!")
-            // router.push("/admin/events")
+            toast.success("Event created successfully!")
+            router.push("/admin/events")
         } catch (error) {
             toast.error("Error creating event")
             console.error(error)

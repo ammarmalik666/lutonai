@@ -138,7 +138,7 @@ export default function AdminEventsPage() {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                 <div className="absolute bottom-4 left-4 right-4">
                                     <h3 className="text-lg font-semibold text-white line-clamp-2">
-                                        <Link 
+                                        <Link
                                             href={`/admin/events/view/${event._id}`}
                                             className="text-white hover:text-red-500 transition-colors"
                                         >
@@ -151,11 +151,10 @@ export default function AdminEventsPage() {
                             {/* Event Details */}
                             <div className="p-4">
                                 <div className="mb-4 flex items-center justify-between">
-                                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                        event.status === 'PUBLISHED' ? 'bg-green-500/20 text-green-500' :
+                                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${event.status === 'PUBLISHED' ? 'bg-green-500/20 text-green-500' :
                                         event.status === 'DRAFT' ? 'bg-yellow-500/20 text-yellow-500' :
-                                        'bg-red-500/20 text-red-500'
-                                    }`}>
+                                            'bg-red-500/20 text-red-500'
+                                        }`}>
                                         {event.eventType}
                                     </span>
                                     <span className="text-sm text-gray-400">
@@ -199,7 +198,7 @@ export default function AdminEventsPage() {
                                         <PencilSquareIcon className="h-4 w-4" />
                                         Edit
                                     </button> */}
-                                    <button 
+                                    <button
                                         onClick={() => handleDeleteClick(event._id, event.title)}
                                         className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
                                     >
